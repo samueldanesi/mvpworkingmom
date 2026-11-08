@@ -178,6 +178,12 @@ async function main() {
   };
   makeCohort(acme.id, 70, "acme");
   makeCohort(beta.id, 4, "beta"); // sotto soglia: deve restare nascosto
+  // Anna ha già fatto il check-in iniziale: non deve essere rimandata all'onboarding
+  const annaP = newPseudonym();
+  await db.insert(pseudonymMap).values({ userId: anna.id, pseudonym: annaP });
+  const annaReg = DateTime.now().minus({ days: 12 }).toJSDate();
+  subjRows.push({ pseudonym: annaP, companyId: acme.id, gender: "f", ageBand: "30-39", childrenCount: 2, childrenAgeBand: "3-5", site: "Roma", jobLevel: "impiegata", area: "carico_mentale", firstPath: true, consentAggregate: true, registeredAt: annaReg });
+  respRows.push(resp(annaP, "who5", "T0", 2, 0, annaReg), resp(annaP, "mental_load", "T0", 4, 0, annaReg), resp(annaP, "care_load", "T0", 3.5, 0, annaReg));
   await db.insert(subjects).values(subjRows);
   await db.insert(events).values(evRows);
   await db.insert(responses).values(respRows);
