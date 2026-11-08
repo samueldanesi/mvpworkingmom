@@ -55,7 +55,7 @@ export async function saveIntakeStep(userId: string, stepIndex: number, patch: P
   if (last) {
     const [u] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     const [agg] = await db
-      .select({ n: sql<number>`count(*)::int` })
+      .select({ n: sql<number>`count(*)` })
       .from(consents)
       .where(and(eq(consents.userId, userId), eq(consents.kind, "aggregate_use"), sql`${consents.revokedAt} is null`));
     await ensureSubject(userId, {

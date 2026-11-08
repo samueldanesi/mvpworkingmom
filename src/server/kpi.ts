@@ -33,11 +33,11 @@ export async function creditRegistry(companyId: string) {
   const { kMin } = await getRules();
   const [r] = await db
     .select({
-      granted: sql<number>`coalesce(sum(delta) filter (where reason = 'grant'),0)::int`,
-      consumed: sql<number>`coalesce(-sum(delta) filter (where reason = 'consume'),0)::int`,
-      refunded: sql<number>`coalesce(sum(delta) filter (where reason = 'refund'),0)::int`,
-      expired: sql<number>`coalesce(-sum(delta) filter (where reason = 'expire'),0)::int`,
-      users: sql<number>`count(distinct user_id)::int`,
+      granted: sql<number>`coalesce(sum(delta) filter (where reason = 'grant'),0)`,
+      consumed: sql<number>`coalesce(-sum(delta) filter (where reason = 'consume'),0)`,
+      refunded: sql<number>`coalesce(sum(delta) filter (where reason = 'refund'),0)`,
+      expired: sql<number>`coalesce(-sum(delta) filter (where reason = 'expire'),0)`,
+      users: sql<number>`count(distinct user_id)`,
     })
     .from(creditLedger)
     .where(eq(creditLedger.companyId, companyId));

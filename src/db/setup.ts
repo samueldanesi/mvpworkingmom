@@ -1,22 +1,16 @@
-/* Crea gli schemi e le tabelle. `--reset` svuota tutto prima. */
-import { execSync } from "node:child_process";
-import postgres from "postgres";
+/* Crea il database applicando le migrazioni. `--reset` cancella prima il file. */
+import { rmSync } from "node:fs";
+import { runMigrations } from "./index";
 
-const url = process.env.DATABASE_URL ?? "postgres://wm:wm@localhost:5432/workingmom";
-const reset = process.argv.includes("--reset");
+const url = process.env.DATABASE_URL ?? "file:./data/wm.db";
 
 async function main() {
-  const sql = postgres(url, { onnotice: () => {} });
-  for (const s of ["identity", "clinical", "analytics", "keys"]) {
-    if (reset) await sql.unsafe(`DROP SCHEMA IF EXISTS ${s} CASCADE`);
-    await sql.unsafe(`CREATE SCHEMA IF NOT EXISTS ${s}`);
+  if (process.argv.includes("--reset") && url.startsWith("file:")) {
+    for (const ext of ["", "-wal", "-shm"]) rmSync(url.slice(5) + ext, { force: true });
   }
-  await sql.end();
-  execSync("npx drizzle-kit push --force", { stdio: "inherit", env: { ...process.env, DATABASE_URL: url } });
-  const sql2 = postgres(url, { onnotice: () => {} });
-  await sql2.unsafe("CREATE SEQUENCE IF NOT EXISTS identity.invoice_seq START 1");
-  await sql2.end();
+  await runMigrations();
   console.log("DB pronto.");
+  process.exit(0);
 }
 main().catch((e) => {
   console.error(e);

@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
-  serverExternalPackages: ["pdfkit", "postgres"],
+  serverExternalPackages: ["pdfkit", "@libsql/client", "libsql"],
   experimental: { serverActions: { bodySizeLimit: "10mb" } },
   async headers() {
     return [

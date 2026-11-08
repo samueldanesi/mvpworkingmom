@@ -120,7 +120,7 @@ export async function redeemByDomain(userId: string, email: string) {
 
 export async function creditBalance(userId: string): Promise<number> {
   const [r] = await db
-    .select({ n: sql<number>`coalesce(sum(${creditLedger.delta}),0)::int` })
+    .select({ n: sql<number>`coalesce(sum(${creditLedger.delta}),0)` })
     .from(creditLedger)
     .where(eq(creditLedger.userId, userId));
   return r?.n ?? 0;

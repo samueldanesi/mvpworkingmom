@@ -13,12 +13,12 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const u = await requireStaff("finance.view");
   const [t] = await db.select({
-    collected: sql<number>`coalesce(sum(amount_cents - refunded_cents) filter (where source='personal' and status in ('paid','partially_refunded')),0)::int`,
-    credits: sql<number>`coalesce(sum(amount_cents) filter (where source='company_credit' and status='paid'),0)::int`,
-    fees: sql<number>`coalesce(sum(fee_cents) filter (where status in ('paid','partially_refunded')),0)::int`,
-    net: sql<number>`coalesce(sum(specialist_net_cents) filter (where status in ('paid','partially_refunded')),0)::int`,
-    refunded: sql<number>`coalesce(sum(refunded_cents),0)::int`,
-    failed: sql<number>`count(*) filter (where status='failed')::int`,
+    collected: sql<number>`coalesce(sum(amount_cents - refunded_cents) filter (where source='personal' and status in ('paid','partially_refunded')),0)`,
+    credits: sql<number>`coalesce(sum(amount_cents) filter (where source='company_credit' and status='paid'),0)`,
+    fees: sql<number>`coalesce(sum(fee_cents) filter (where status in ('paid','partially_refunded')),0)`,
+    net: sql<number>`coalesce(sum(specialist_net_cents) filter (where status in ('paid','partially_refunded')),0)`,
+    refunded: sql<number>`coalesce(sum(refunded_cents),0)`,
+    failed: sql<number>`count(*) filter (where status='failed')`,
   }).from(payments);
   const pays = await db.select({ p: payments, name: users.fullName }).from(payments).leftJoin(users, eq(users.id, payments.userId)).orderBy(desc(payments.createdAt)).limit(40);
   const pos = await db.select({ po: payouts, name: users.fullName }).from(payouts).innerJoin(users, eq(users.id, payouts.specialistId)).orderBy(desc(payouts.createdAt)).limit(30);

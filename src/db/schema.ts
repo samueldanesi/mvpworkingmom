@@ -1,40 +1,31 @@
 import { sql } from "drizzle-orm";
-import {
-  bigserial,
-  boolean,
-  date,
-  index,
-  integer,
-  jsonb,
-  pgSchema,
-  primaryKey,
-  real,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
 /**
- * D-01: tre archivi separati + uno per le chiavi di collegamento.
+ * MVP su SQLite (un solo file, nessuna installazione).
+ *
+ * I tre archivi di D-01 restano distinti a livello di organizzazione del codice e dei dati:
  *  - identity : anagrafica, contatti, pagamenti, operatività
- *  - clinical : chat, note, allegati, questionario d'ingresso (dati sulla salute)
+ *  - clinical : chat, note, allegati, questionario d'ingresso (dati sulla salute, cifrati a livello di campo)
  *  - analytics: eventi e risposte con pseudonimo, senza nome né contatti
- *  - keys     : mappa utente -> pseudonimo (da isolare con ruolo DB dedicato in produzione)
+ *  - keys     : mappa utente -> pseudonimo
+ * In SQLite stanno nello stesso file; per la produzione (Postgres in UE) vanno in schemi/ruoli separati.
  */
-export const identity = pgSchema("identity");
-export const clinical = pgSchema("clinical");
-export const analytics = pgSchema("analytics");
-export const keys = pgSchema("keys");
 
-const ts = (name: string) => timestamp(name, { withTimezone: true });
-const id = () => uuid("id").primaryKey().defaultRandom();
+const now = () => new Date();
+const ts = (name: string) => integer(name, { mode: "timestamp_ms" });
+const boolean = (name: string) => integer(name, { mode: "boolean" });
+const jsonb = (name: string) => text(name, { mode: "json" });
+const date = (name: string) => text(name);
+const uuid = (name: string) => text(name);
+const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
+const arr = (name: string, def: string[] = []) => text(name, { mode: "json" }).$type<string[]>().notNull().$defaultFn(() => [...def]);
 
 export type Role = "user" | "specialist" | "hr" | "clinical_lead" | "admin";
 
 /* ───────────────────────────── identity ───────────────────────────── */
 
-export const companies = identity.table("companies", {
+export const companies = sqliteTable("companies", {
   id: id(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
@@ -44,10 +35,10 @@ export const companies = identity.table("companies", {
   coveredEmployees: integer("covered_employees").notNull().default(0),
   includedSessions: integer("included_sessions").notNull().default(3), // per dipendente
   discountPct: integer("discount_pct").notNull().default(0), // sconto sulle sedute successive
-  coveredSpecialties: text("covered_specialties").array().notNull().default(sql`'{}'::text[]`),
+  coveredSpecialties: arr("covered_specialties"),
   familyMax: integer("family_max").notNull().default(0), // familiari per dipendente
   familyDiscountPct: integer("family_discount_pct").notNull().default(0),
-  allowedDomains: text("allowed_domains").array().notNull().default(sql`'{}'::text[]`),
+  allowedDomains: arr("allowed_domains"),
   allowPersonalEmail: boolean("allow_personal_email").notNull().default(false),
   annualFeeCents: integer("annual_fee_cents").notNull().default(0),
   startsAt: ts("starts_at"),
@@ -56,10 +47,10 @@ export const companies = identity.table("companies", {
   pipelineStage: text("pipeline_stage").notNull().default("lancio"), // C-02
   contractValueCents: integer("contract_value_cents").notNull().default(0),
   accountOwner: text("account_owner"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const users = identity.table(
+export const users = sqliteTable(
   "users",
   {
     id: id(),
@@ -86,13 +77,13 @@ export const users = identity.table(
     failedLogins: integer("failed_logins").notNull().default(0),
     lockedUntil: ts("locked_until"),
     lastLoginAt: ts("last_login_at"),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
     deletedAt: ts("deleted_at"),
   },
   (t) => [index("users_company_idx").on(t.companyId)],
 );
 
-export const accessCodes = identity.table("access_codes", {
+export const accessCodes = sqliteTable("access_codes", {
   id: id(),
   companyId: uuid("company_id").notNull().references(() => companies.id),
   code: text("code").notNull().unique(),
@@ -101,20 +92,20 @@ export const accessCodes = identity.table("access_codes", {
   usedCount: integer("used_count").notNull().default(0),
   expiresAt: ts("expires_at"),
   revokedAt: ts("revoked_at"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const familyInvites = identity.table("family_invites", {
+export const familyInvites = sqliteTable("family_invites", {
   id: id(),
   code: text("code").notNull().unique(),
   employeeId: uuid("employee_id").notNull().references(() => users.id),
   companyId: uuid("company_id").notNull().references(() => companies.id),
   usedBy: uuid("used_by"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
 /** B-05: registro crediti. delta > 0 assegnati/rimborsati, < 0 consumati/scaduti. */
-export const creditLedger = identity.table(
+export const creditLedger = sqliteTable(
   "credit_ledger",
   {
     id: id(),
@@ -124,21 +115,21 @@ export const creditLedger = identity.table(
     reason: text("reason").$type<"grant" | "consume" | "refund" | "expire">().notNull(),
     appointmentId: uuid("appointment_id"),
     note: text("note"),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [index("credit_company_idx").on(t.companyId), index("credit_user_idx").on(t.userId)],
 );
 
-export const consents = identity.table("consents", {
+export const consents = sqliteTable("consents", {
   id: id(),
   userId: uuid("user_id").notNull().references(() => users.id),
   kind: text("kind").notNull(), // health_data | aggregate_use | terms | privacy | specialist_contract | code_of_conduct
   version: text("version").notNull(),
-  grantedAt: ts("granted_at").notNull().defaultNow(),
+  grantedAt: ts("granted_at").notNull().$defaultFn(now),
   revokedAt: ts("revoked_at"),
 });
 
-export const authTokens = identity.table("auth_tokens", {
+export const authTokens = sqliteTable("auth_tokens", {
   id: id(),
   userId: uuid("user_id").notNull().references(() => users.id),
   kind: text("kind").$type<"verify" | "reset">().notNull(),
@@ -148,7 +139,7 @@ export const authTokens = identity.table("auth_tokens", {
 });
 
 /** C-08: ogni accesso a un dato personale è registrato (chi, quando, perché). */
-export const auditLog = identity.table(
+export const auditLog = sqliteTable(
   "audit_log",
   {
     id: id(),
@@ -159,12 +150,12 @@ export const auditLog = identity.table(
     subjectId: text("subject_id"),
     reason: text("reason"),
     ip: text("ip"),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [index("audit_created_idx").on(t.createdAt)],
 );
 
-export const gdprRequests = identity.table("gdpr_requests", {
+export const gdprRequests = sqliteTable("gdpr_requests", {
   id: id(),
   userId: uuid("user_id"),
   userEmail: text("user_email"),
@@ -172,28 +163,28 @@ export const gdprRequests = identity.table("gdpr_requests", {
   status: text("status").$type<"open" | "done" | "rejected">().notNull().default("open"),
   note: text("note"),
   dueAt: ts("due_at").notNull(),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
   closedAt: ts("closed_at"),
 });
 
-export const emailTemplates = identity.table("email_templates", {
+export const emailTemplates = sqliteTable("email_templates", {
   key: text("key").primaryKey(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
-  updatedAt: ts("updated_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().$defaultFn(now),
 });
 
-export const emailOutbox = identity.table("email_outbox", {
+export const emailOutbox = sqliteTable("email_outbox", {
   id: id(),
   toEmail: text("to_email").notNull(),
   templateKey: text("template_key"),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   status: text("status").notNull().default("sent"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const notifications = identity.table(
+export const notifications = sqliteTable(
   "notifications",
   {
     id: id(),
@@ -201,20 +192,20 @@ export const notifications = identity.table(
     text: text("text").notNull(),
     href: text("href"),
     readAt: ts("read_at"),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [index("notif_user_idx").on(t.userId)],
 );
 
-export const specialistProfiles = identity.table("specialist_profiles", {
+export const specialistProfiles = sqliteTable("specialist_profiles", {
   userId: uuid("user_id").primaryKey().references(() => users.id),
   title: text("title"),
   bio: text("bio"),
   approach: text("approach"),
-  specializations: text("specializations").array().notNull().default(sql`'{}'::text[]`),
-  languages: text("languages").array().notNull().default(sql`'{it}'::text[]`),
+  specializations: arr("specializations"),
+  languages: arr("languages", ["it"]),
   gender: text("gender"),
-  ageGroups: text("age_groups").array().notNull().default(sql`'{}'::text[]`), // fasce età figli seguite
+  ageGroups: arr("age_groups"), // fasce età figli seguite
   photoUrl: text("photo_url"),
   registryName: text("registry_name"), // albo / associazione
   registryNumber: text("registry_number"),
@@ -233,10 +224,10 @@ export const specialistProfiles = identity.table("specialist_profiles", {
   pendingSubmittedAt: ts("pending_submitted_at"),
   statusNote: text("status_note"),
   approvedAt: ts("approved_at"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const specialistDocuments = identity.table("specialist_documents", {
+export const specialistDocuments = sqliteTable("specialist_documents", {
   id: id(),
   specialistId: uuid("specialist_id").notNull().references(() => users.id),
   kind: text("kind").notNull(),
@@ -244,11 +235,11 @@ export const specialistDocuments = identity.table("specialist_documents", {
   mime: text("mime").notNull(),
   size: integer("size").notNull(),
   storageKey: text("storage_key").notNull(),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
 /** weekday: 1 = lunedì … 7 = domenica (ISO). Orari nel fuso del professionista. */
-export const availabilityRules = identity.table("availability_rules", {
+export const availabilityRules = sqliteTable("availability_rules", {
   id: id(),
   specialistId: uuid("specialist_id").notNull().references(() => users.id),
   weekday: integer("weekday").notNull(),
@@ -257,7 +248,7 @@ export const availabilityRules = identity.table("availability_rules", {
   kind: text("kind").$type<"intro" | "session">().notNull(),
 });
 
-export const availabilityExceptions = identity.table("availability_exceptions", {
+export const availabilityExceptions = sqliteTable("availability_exceptions", {
   id: id(),
   specialistId: uuid("specialist_id").notNull().references(() => users.id),
   day: date("day").notNull(),
@@ -265,7 +256,7 @@ export const availabilityExceptions = identity.table("availability_exceptions", 
 });
 
 /** Stato del percorso utente-specialista (S-05, C-03, K-12). */
-export const careRelationships = identity.table(
+export const careRelationships = sqliteTable(
   "care_relationships",
   {
     id: id(),
@@ -276,8 +267,8 @@ export const careRelationships = identity.table(
       .notNull()
       .default("intro_booked"),
     changeReason: text("change_reason"),
-    createdAt: ts("created_at").notNull().defaultNow(),
-    updatedAt: ts("updated_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
+    updatedAt: ts("updated_at").notNull().$defaultFn(now),
   },
   (t) => [uniqueIndex("care_unique").on(t.userId, t.specialistId)],
 );
@@ -291,7 +282,7 @@ export type ApptStatus =
   | "cancelled"
   | "cancelled_by_specialist";
 
-export const appointments = identity.table(
+export const appointments = sqliteTable(
   "appointments",
   {
     id: id(),
@@ -313,7 +304,7 @@ export const appointments = identity.table(
     outcomeNote: text("outcome_note"),
     reminded24: boolean("reminded_24").notNull().default(false),
     reminded1: boolean("reminded_1").notNull().default(false),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [
     // un solo appuntamento attivo per slot del professionista (evita doppie prenotazioni)
@@ -325,7 +316,7 @@ export const appointments = identity.table(
   ],
 );
 
-export const payments = identity.table(
+export const payments = sqliteTable(
   "payments",
   {
     id: id(),
@@ -345,14 +336,14 @@ export const payments = identity.table(
     providerRef: text("provider_ref"),
     refundedCents: integer("refunded_cents").notNull().default(0),
     failureReason: text("failure_reason"),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
     paidAt: ts("paid_at"),
     payoutId: uuid("payout_id"),
   },
   (t) => [index("pay_user_idx").on(t.userId), index("pay_specialist_idx").on(t.specialistId)],
 );
 
-export const invoices = identity.table("invoices", {
+export const invoices = sqliteTable("invoices", {
   id: id(),
   number: text("number").notNull().unique(),
   kind: text("kind").$type<"invoice" | "credit_note">().notNull().default("invoice"),
@@ -362,10 +353,10 @@ export const invoices = identity.table("invoices", {
   billToEmail: text("bill_to_email"),
   description: text("description").notNull(),
   totalCents: integer("total_cents").notNull(),
-  issuedAt: ts("issued_at").notNull().defaultNow(),
+  issuedAt: ts("issued_at").notNull().$defaultFn(now),
 });
 
-export const payouts = identity.table("payouts", {
+export const payouts = sqliteTable("payouts", {
   id: id(),
   specialistId: uuid("specialist_id").notNull().references(() => users.id),
   periodStart: date("period_start").notNull(),
@@ -377,10 +368,10 @@ export const payouts = identity.table("payouts", {
   status: text("status").$type<"pending" | "paid">().notNull().default("pending"),
   providerRef: text("provider_ref"),
   paidAt: ts("paid_at"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const companyInvoices = identity.table("company_invoices", {
+export const companyInvoices = sqliteTable("company_invoices", {
   id: id(),
   companyId: uuid("company_id").notNull().references(() => companies.id),
   number: text("number").notNull().unique(),
@@ -388,10 +379,10 @@ export const companyInvoices = identity.table("company_invoices", {
   amountCents: integer("amount_cents").notNull(),
   description: text("description").notNull(),
   status: text("status").$type<"draft" | "issued" | "paid">().notNull().default("issued"),
-  issuedAt: ts("issued_at").notNull().defaultNow(),
+  issuedAt: ts("issued_at").notNull().$defaultFn(now),
 });
 
-export const tickets = identity.table("tickets", {
+export const tickets = sqliteTable("tickets", {
   id: id(),
   userId: uuid("user_id").references(() => users.id),
   subject: text("subject").notNull(),
@@ -399,69 +390,69 @@ export const tickets = identity.table("tickets", {
   status: text("status").$type<"open" | "pending" | "closed">().notNull().default("open"),
   relatedAppointmentId: uuid("related_appointment_id"),
   firstResponseAt: ts("first_response_at"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
   closedAt: ts("closed_at"),
 });
 
-export const ticketMessages = identity.table("ticket_messages", {
+export const ticketMessages = sqliteTable("ticket_messages", {
   id: id(),
   ticketId: uuid("ticket_id").notNull().references(() => tickets.id),
   senderId: uuid("sender_id"),
   fromStaff: boolean("from_staff").notNull().default(false),
   body: text("body").notNull(),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
-export const settings = identity.table("settings", {
+export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").notNull(),
 });
 
 /* ───────────────────────────── clinical ───────────────────────────── */
 
-export const intakeProfiles = clinical.table("intake_profiles", {
+export const intakeProfiles = sqliteTable("intake_profiles", {
   userId: uuid("user_id").primaryKey(),
   dataEnc: text("data_enc").notNull(), // JSON cifrato (AES-256-GCM)
   step: integer("step").notNull().default(0),
   completedAt: ts("completed_at"),
   safetyFlag: boolean("safety_flag").notNull().default(false),
-  updatedAt: ts("updated_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().$defaultFn(now),
 });
 
-export const safetyEvents = clinical.table("safety_events", {
+export const safetyEvents = sqliteTable("safety_events", {
   id: id(),
   userId: uuid("user_id").notNull(),
   trigger: text("trigger").notNull(),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
   clearedAt: ts("cleared_at"),
   clearedBy: uuid("cleared_by"),
 });
 
-export const threads = clinical.table(
+export const threads = sqliteTable(
   "threads",
   {
     id: id(),
     userId: uuid("user_id").notNull(),
     specialistId: uuid("specialist_id").notNull(),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [uniqueIndex("thread_unique").on(t.userId, t.specialistId)],
 );
 
-export const messages = clinical.table(
+export const messages = sqliteTable(
   "messages",
   {
     id: id(),
     threadId: uuid("thread_id").notNull().references(() => threads.id),
     senderId: uuid("sender_id").notNull(),
     bodyEnc: text("body_enc").notNull(),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
     readAt: ts("read_at"),
   },
   (t) => [index("msg_thread_idx").on(t.threadId, t.createdAt)],
 );
 
-export const attachments = clinical.table("attachments", {
+export const attachments = sqliteTable("attachments", {
   id: id(),
   messageId: uuid("message_id").notNull().references(() => messages.id),
   filename: text("filename").notNull(),
@@ -470,19 +461,19 @@ export const attachments = clinical.table("attachments", {
   storageKey: text("storage_key").notNull(),
 });
 
-export const sessionNotes = clinical.table("session_notes", {
+export const sessionNotes = sqliteTable("session_notes", {
   id: id(),
   appointmentId: uuid("appointment_id").notNull().unique(),
   specialistId: uuid("specialist_id").notNull(),
   userId: uuid("user_id"),
   contentEnc: text("content_enc").notNull(),
   retained: boolean("retained").notNull().default(false), // conservata per obbligo professionale dopo cancellazione account
-  createdAt: ts("created_at").notNull().defaultNow(),
-  updatedAt: ts("updated_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
+  updatedAt: ts("updated_at").notNull().$defaultFn(now),
 });
 
 /** S-11: segnalazione formale al responsabile clinico. Unico canale con cui questi vede contenuti. */
-export const clinicalReports = clinical.table("clinical_reports", {
+export const clinicalReports = sqliteTable("clinical_reports", {
   id: id(),
   specialistId: uuid("specialist_id").notNull(),
   userId: uuid("user_id"),
@@ -491,12 +482,12 @@ export const clinicalReports = clinical.table("clinical_reports", {
   status: text("status").$type<"new" | "in_review" | "closed">().notNull().default("new"),
   handledBy: uuid("handled_by"),
   outcome: text("outcome"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
 /* ───────────────────────────── analytics ───────────────────────────── */
 
-export const subjects = analytics.table(
+export const subjects = sqliteTable(
   "subjects",
   {
     pseudonym: text("pseudonym").primaryKey(),
@@ -510,40 +501,40 @@ export const subjects = analytics.table(
     area: text("area"),
     firstPath: boolean("first_path"),
     consentAggregate: boolean("consent_aggregate").notNull().default(false),
-    registeredAt: ts("registered_at").notNull().defaultNow(),
+    registeredAt: ts("registered_at").notNull().$defaultFn(now),
   },
   (t) => [index("subj_company_idx").on(t.companyId)],
 );
 
-export const events = analytics.table(
+export const events = sqliteTable(
   "events",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: integer("id").primaryKey({ autoIncrement: true }),
     pseudonym: text("pseudonym").notNull(),
     type: text("type").notNull(),
-    occurredAt: ts("occurred_at").notNull().defaultNow(),
-    meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
+    occurredAt: ts("occurred_at").notNull().$defaultFn(now),
+    meta: jsonb("meta").$type<Record<string, unknown>>().notNull().$defaultFn(() => ({})),
   },
   (t) => [index("ev_pseudo_idx").on(t.pseudonym), index("ev_type_idx").on(t.type)],
 );
 
-export const responses = analytics.table(
+export const responses = sqliteTable(
   "responses",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: integer("id").primaryKey({ autoIncrement: true }),
     pseudonym: text("pseudonym").notNull(),
     instrument: text("instrument").notNull(),
     version: text("version").notNull(),
     moment: text("moment").notNull(), // T0 | T1 | T2 | survey
     score: real("score"),
-    items: jsonb("items").$type<Record<string, number>>().notNull().default({}),
-    answeredAt: ts("answered_at").notNull().defaultNow(),
+    items: jsonb("items").$type<Record<string, number>>().notNull().$defaultFn(() => ({})),
+    answeredAt: ts("answered_at").notNull().$defaultFn(now),
   },
   (t) => [index("resp_pseudo_idx").on(t.pseudonym)],
 );
 
 /** D-07: report emessi immutabili; una correzione genera una nuova versione. */
-export const reports = analytics.table("reports", {
+export const reports = sqliteTable("reports", {
   id: id(),
   companyId: uuid("company_id").notNull(),
   periodStart: date("period_start").notNull(),
@@ -555,17 +546,23 @@ export const reports = analytics.table("reports", {
   sampleSize: integer("sample_size").notNull(),
   supersedesId: uuid("supersedes_id"),
   createdBy: uuid("created_by"),
-  createdAt: ts("created_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
 });
 
 /* ───────────────────────────── keys ───────────────────────────── */
 
-export const pseudonymMap = keys.table(
+export const pseudonymMap = sqliteTable(
   "pseudonym_map",
   {
     userId: uuid("user_id").notNull(),
     pseudonym: text("pseudonym").notNull(),
-    createdAt: ts("created_at").notNull().defaultNow(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
   },
   (t) => [primaryKey({ columns: [t.userId] }), uniqueIndex("pseudo_unique").on(t.pseudonym)],
 );
+
+/** Contatori progressivi (numerazione documenti). */
+export const counters = sqliteTable("counters", {
+  name: text("name").primaryKey(),
+  value: integer("value").notNull(),
+});

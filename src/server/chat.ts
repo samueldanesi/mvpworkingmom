@@ -24,7 +24,7 @@ export async function listThreads(actorId: string, as: "user" | "specialist") {
     const [other] = await db.select({ id: users.id, name: users.fullName }).from(users).where(eq(users.id, otherId)).limit(1);
     const [last] = await db.select().from(messages).where(eq(messages.threadId, t.id)).orderBy(desc(messages.createdAt)).limit(1);
     const [{ n }] = await db
-      .select({ n: sql<number>`count(*)::int` })
+      .select({ n: sql<number>`count(*)` })
       .from(messages)
       .where(and(eq(messages.threadId, t.id), ne(messages.senderId, actorId), sql`${messages.readAt} is null`));
     out.push({ thread: t, otherName: other?.name ?? "Utente", last: last ? { text: decryptText(last.bodyEnc), at: last.createdAt } : null, unread: n });

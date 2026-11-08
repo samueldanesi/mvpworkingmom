@@ -186,11 +186,11 @@ async function main() {
 
   console.log("Seed completato.");
   console.log(`Password per tutti: ${PASSWORD}  ·  2FA staff/specialisti (segreto di prova): ${DEMO_TOTP}`);
-  await sqlClient.end();
+  sqlClient.close();
 }
 
 main().catch(async (e) => {
   console.error(e);
-  await sqlClient.end();
+  sqlClient.close();
   process.exit(1);
 });

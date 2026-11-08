@@ -70,7 +70,7 @@ export async function saveCompanyAction(fd: FormData) {
     await audit(u, "company_created", "company", c.id);
     redirect(`/admin/companies/${c.id}?ok=${encodeURIComponent("Azienda creata.")}`);
   } catch (e) {
-    if ((e as { code?: string; cause?: { code?: string } })?.code === "23505" || (e as { cause?: { code?: string } })?.cause?.code === "23505") fail("/admin/companies", "Esiste già un'azienda con questo nome.");
+    if (/UNIQUE constraint failed/i.test(String((e as Error)?.message ?? "") + String((e as { cause?: Error })?.cause?.message ?? ""))) fail("/admin/companies", "Esiste già un'azienda con questo nome.");
     throw e;
   }
 }

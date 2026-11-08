@@ -23,7 +23,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const [{ n: openTickets }] = await db.select({ n: count() }).from(tickets).where(sql`${tickets.status} <> 'closed'`);
   const [{ n: safety }] = await db.select({ n: count() }).from(safetyEvents).where(isNull(safetyEvents.clearedAt));
   const [{ n: reportsNew }] = await db.select({ n: count() }).from(clinicalReports).where(eq(clinicalReports.status, "new"));
-  const funnelRows = await db.select({ t: events.type, n: sql<number>`count(distinct pseudonym)::int` }).from(events).groupBy(events.type);
+  const funnelRows = await db.select({ t: events.type, n: sql<number>`count(distinct pseudonym)` }).from(events).groupBy(events.type);
   const f = new Map(funnelRows.map((r) => [r.t, r.n]));
   const base = Math.max(1, ...FUNNEL.slice(0, 4).map(([k]) => f.get(k) ?? 0));
 

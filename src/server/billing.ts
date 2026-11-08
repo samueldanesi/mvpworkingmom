@@ -1,13 +1,17 @@
-import { eq } from "drizzle-orm";
-import { appointments, creditLedger, db, invoices, payments, users } from "@/db";
+import { eq, sql } from "drizzle-orm";
+import { appointments, counters, creditLedger, db, invoices, payments, users } from "@/db";
 import { refundExternal, splitAmount } from "@/lib/payments";
 import { fmtDateTime } from "@/lib/format";
-import { sqlClient } from "@/db";
 import { getRules } from "./settings";
 
 export async function nextNumber(prefix: "WM" | "CE"): Promise<string> {
-  const rows = await sqlClient`select nextval('identity.invoice_seq') as n`;
-  return `${prefix}-${new Date().getFullYear()}-${String(rows[0].n).padStart(6, "0")}`;
+  // contatore atomico (sostituisce la sequenza Postgres)
+  const [row] = await db
+    .insert(counters)
+    .values({ name: "invoice", value: 1 })
+    .onConflictDoUpdate({ target: counters.name, set: { value: sql`${counters.value} + 1` } })
+    .returning();
+  return `${prefix}-${new Date().getFullYear()}-${String(row.value).padStart(6, "0")}`;
 }
 
 /**

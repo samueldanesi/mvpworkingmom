@@ -16,3 +16,6 @@
 - Per la sync calendari: app OAuth Google e Microsoft (la verifica Google per gli scope del calendario richiede settimane).
 - Brand (logo, colori), testi definitivi, 3-4 profili specialisti di prova reali o realistici.
 - Un referente unico che decide e risponde.
+
+## Decisione tecnica per il passaggio in produzione
+L'MVP gira su SQLite per essere semplice da provare. Prima di usare dati reali serve passare a Postgres in UE (stesso ORM, tre schemi con ruoli distinti, backup e prova di ripristino): lavoro stimato di qualche giorno, da concordare.

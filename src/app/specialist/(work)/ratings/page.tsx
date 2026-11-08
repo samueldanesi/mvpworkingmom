@@ -12,14 +12,14 @@ export default async function Ratings() {
   const u = await requireUser({ roles: ["specialist"] });
   const [r] = await db
     .select({
-      introDone: sql<number>`count(*) filter (where status in ('intro_done','active','interrupted','ended','changed'))::int`,
-      active: sql<number>`count(*) filter (where status = 'active')::int`,
-      changed: sql<number>`count(*) filter (where status = 'changed')::int`,
+      introDone: sql<number>`count(*) filter (where status in ('intro_done','active','interrupted','ended','changed'))`,
+      active: sql<number>`count(*) filter (where status = 'active')`,
+      changed: sql<number>`count(*) filter (where status = 'changed')`,
     })
     .from(careRelationships)
     .where(eq(careRelationships.specialistId, u.id));
   const [s] = await db
-    .select({ n: sql<number>`count(*)::int` })
+    .select({ n: sql<number>`count(*)` })
     .from(appointments)
     .where(and(eq(appointments.specialistId, u.id), eq(appointments.kind, "session"), inArray(appointments.status, ["completed"])));
   const enough = r.introDone >= MIN;

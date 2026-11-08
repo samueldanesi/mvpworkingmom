@@ -65,7 +65,7 @@ Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/t
 | C-10 | 🟡 | Modelli modificabili, registro invii, promemoria 24 h/1 h (serve uno scheduler esterno). **Nessun provider email collegato**; SMS e push ⛔. |
 
 ## Dati e KPI (§7)
-D-01…D-03, D-05…D-07 ✅. **D-04** 🟡 (strumenti da scegliere). **D-08** ⛔ (nessun job di conservazione/scadenza dati: tempi da definire con il DPO).
+D-01 🟡 (tre archivi distinti ma nello stesso file SQLite: la separazione fisica arriva con Postgres), D-02, D-03, D-05…D-07 ✅. **D-04** 🟡 (strumenti da scegliere). **D-08** ⛔ (nessun job di conservazione/scadenza dati: tempi da definire con il DPO).
 K-01…K-12, K-15 ✅ (K-13 non esiste nel documento); K-14 ⛔. Il collegamento indicatore↔prassi UNI va fatto con un lead auditor (§7.3).
 
 ## Privacy e sicurezza (§8)
@@ -74,7 +74,7 @@ K-01…K-12, K-15 ✅ (K-13 non esiste nel documento); K-14 ⛔. Il collegamento
 | P-01 | ✅ | |
 | P-03 | ⏳ | Titolare/responsabile da fornire. |
 | P-04 | ✅ | Soglia su ogni filtro, testata. |
-| P-05 | 🟡 | Cifratura a livello di campo (AES-256-GCM) e degli allegati. Chiave da variabile d'ambiente: in produzione KMS. Cifratura a riposo del disco e "server in UE" dipendono dall'hosting scelto. |
+| P-05 | 🟡 | Database SQLite non cifrato a riposo (in produzione: Postgres in UE con cifratura del disco). Cifratura a livello di campo (AES-256-GCM) e degli allegati. Chiave da variabile d'ambiente: in produzione KMS. Cifratura a riposo del disco e "server in UE" dipendono dall'hosting scelto. |
 | P-06 | 🟡 | 2FA obbligatorio (specialisti, resp. clinico, admin), sessioni 8 h, audit. "Inalterabile": l'app non modifica né cancella il log, ma servono permessi DB di sola aggiunta. |
 | P-07 | 🔌 | Whereby configurato senza registrazione; non provato. |
 | P-08 | ✅ | Nessun dato carta nei nostri sistemi (per costruzione). |

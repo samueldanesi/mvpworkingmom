@@ -31,8 +31,9 @@ export class BookingError extends Error {}
 const ACTIVE = ["booked", "pending_payment"] as const;
 
 function isUnique(e: unknown) {
-  const x = e as { code?: string; cause?: { code?: string } };
-  return x?.code === "23505" || x?.cause?.code === "23505";
+  const msgs: string[] = [];
+  for (let x = e as { message?: string; cause?: unknown } | undefined; x && msgs.length < 4; x = x.cause as typeof x) msgs.push(String(x.message ?? ""));
+  return msgs.some((m) => /UNIQUE constraint failed|SQLITE_CONSTRAINT/i.test(m));
 }
 
 /* ───────────────────────── prerequisiti ───────────────────────── */
@@ -174,15 +175,14 @@ export async function bookSessions(userId: string, specialistId: string, starts:
 
   try {
     await db.transaction(async (tx) => {
-      // serializza le prenotazioni dello stesso utente (evita di spendere due volte lo stesso credito)
-      await tx.execute(sql`select id from identity.users where id = ${userId} for update`);
+      // SQLite serializza le scritture: due prenotazioni concorrenti dello stesso utente non spendono due volte lo stesso credito
       const [u] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
       const [co] = u.companyId ? await tx.select().from(companies).where(eq(companies.id, u.companyId)).limit(1) : [];
       const now = new Date();
       const contractOk = !!co && co.status === "active" && (!co.endsAt || co.endsAt > now) && (!co.startsAt || co.startsAt <= now);
       const covered = !co || co.coveredSpecialties.length === 0 || prof.specializations.some((s) => co.coveredSpecialties.includes(s));
       const [bal] = await tx
-        .select({ n: sql<number>`coalesce(sum(${creditLedger.delta}),0)::int` })
+        .select({ n: sql<number>`coalesce(sum(${creditLedger.delta}),0)` })
         .from(creditLedger)
         .where(eq(creditLedger.userId, userId));
       let balance = bal?.n ?? 0;

@@ -25,7 +25,7 @@ let marco: { id: string };
 let seq = 0;
 
 beforeAll(async () => {
-  if (!process.env.DATABASE_URL?.includes("workingmom_test")) throw new Error("Questi test vanno eseguiti sul DB workingmom_test");
+  if (!process.env.DATABASE_URL?.includes("test.db")) throw new Error("Questi test vanno eseguiti sul DB data/test.db");
   m = {
     db: await import("@/db"),
     booking: await import("../booking"),
@@ -68,8 +68,8 @@ async function activeWith(userId: string, specialistId: string) {
   return a;
 }
 
-async function freeSessionSlots(specialistId: string, n: number) {
-  const all = await m.slots.loadSlots(specialistId, "session", { days: 60 });
+async function freeSessionSlots(specialistId: string, n: number, minDaysAhead = 0) {
+  const all = (await m.slots.loadSlots(specialistId, "session", { days: 60 })).filter((s) => s.startsAt.getTime() > Date.now() + minDaysAhead * 86_400_000);
   const out = [];
   let lastEnd = 0;
   for (const s of all) {
@@ -481,7 +481,7 @@ describe("Altri requisiti", () => {
     const u = await newUser();
     await onboard(u.id);
     await activeWith(u.id, laura.id);
-    const [s1, s2] = await freeSessionSlots(laura.id, 2);
+    const [s1, s2] = await freeSessionSlots(laura.id, 2, 2);
     const r = await m.booking.bookSessions(u.id, laura.id, [s1.startsAt]);
     await m.booking.completePayments(r.pendingPaymentIds, "pi_mv");
     await m.booking.rescheduleAppointment(r.appointmentIds[0], u.id, s2.startsAt);
@@ -523,10 +523,11 @@ describe("Altri requisiti", () => {
   });
   it("i campi sensibili non finiscono in chiaro nel database", async () => {
     const { sqlClient } = m.db;
-    const rows = await sqlClient`select data_enc from clinical.intake_profiles limit 5`;
+    const rows = (await sqlClient.execute("select data_enc from intake_profiles limit 5")).rows;
+    expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) expect(String(r.data_enc).startsWith("v1:")).toBe(true);
-    const like1 = await sqlClient`select count(*)::int n from clinical.intake_profiles where data_enc like '%sonno%'`;
-    expect(like1[0].n).toBe(0);
+    const like1 = (await sqlClient.execute("select count(*) as n from intake_profiles where data_enc like '%sonno%'")).rows;
+    expect(Number(like1[0].n)).toBe(0);
   });
 });
 

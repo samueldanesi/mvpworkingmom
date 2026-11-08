@@ -15,7 +15,7 @@ export default async function Specialists({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   await requireStaff("specialists.review");
   const rows = await db.select({ p: specialistProfiles, u: users }).from(specialistProfiles).innerJoin(users, eq(users.id, specialistProfiles.userId)).orderBy(desc(specialistProfiles.createdAt));
-  const stats = await db.select({ id: appointments.specialistId, done: sql<number>`count(*) filter (where status='completed')::int`, noShow: sql<number>`count(*) filter (where status='no_show_user')::int`, cancelledBy: sql<number>`count(*) filter (where status='cancelled_by_specialist')::int`, booked: sql<number>`count(*) filter (where status='booked')::int` }).from(appointments).groupBy(appointments.specialistId);
+  const stats = await db.select({ id: appointments.specialistId, done: sql<number>`count(*) filter (where status='completed')`, noShow: sql<number>`count(*) filter (where status='no_show_user')`, cancelledBy: sql<number>`count(*) filter (where status='cancelled_by_specialist')`, booked: sql<number>`count(*) filter (where status='booked')` }).from(appointments).groupBy(appointments.specialistId);
   const st = new Map(stats.map((s) => [s.id, s]));
   const docs = await db.select().from(specialistDocuments);
   return (

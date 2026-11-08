@@ -13,7 +13,7 @@ export default async function SupportAdmin({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   await requireStaff("tickets.handle");
   const rows = await db.select({ t: tickets, name: users.fullName }).from(tickets).leftJoin(users, eq(users.id, tickets.userId)).orderBy(desc(tickets.createdAt)).limit(100);
-  const [m] = await db.select({ avgH: sql<number>`coalesce(avg(extract(epoch from (first_response_at - created_at))/3600),0)::float`, answered: sql<number>`count(first_response_at)::int` }).from(tickets);
+  const [m] = await db.select({ avgH: sql<number>`coalesce(avg((first_response_at - created_at) / 3600000.0),0)`, answered: sql<number>`count(first_response_at)` }).from(tickets);
   return (
     <>
       <PageHeader title="Assistenza e operations" />

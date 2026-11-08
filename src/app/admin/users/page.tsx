@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, like, or } from "drizzle-orm";
 import { Badge, Button, Card, Empty, Field, PageHeader, str } from "@/components/ui";
 import { db, users } from "@/db";
 import { fmtDate } from "@/lib/format";
@@ -15,7 +15,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const rows = await db
     .select()
     .from(users)
-    .where(and(isNull(users.deletedAt), q ? or(ilike(users.email, `%${q}%`), ilike(users.fullName, `%${q}%`)) : undefined, roleFilter ? eq(users.role, roleFilter) : undefined))
+    .where(and(isNull(users.deletedAt), q ? or(like(users.email, `%${q}%`), like(users.fullName, `%${q}%`)) : undefined, roleFilter ? eq(users.role, roleFilter) : undefined))
     .orderBy(desc(users.createdAt))
     .limit(100);
   return (

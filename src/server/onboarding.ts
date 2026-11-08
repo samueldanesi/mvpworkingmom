@@ -8,7 +8,7 @@ export async function nextOnboardingStep(userId: string): Promise<string | null>
   const [u] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!u.onboardingPath && !u.companyId) return "/onboarding";
   const [c] = await db
-    .select({ n: sql<number>`count(*)::int` })
+    .select({ n: sql<number>`count(*)` })
     .from(consents)
     .where(and(eq(consents.userId, userId), eq(consents.kind, "health_data"), sql`${consents.revokedAt} is null`));
   if (!c.n) return "/onboarding/consents";

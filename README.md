@@ -5,20 +5,20 @@ sedute, chat, pagamenti, console HR con report anonimi, area specialista e backo
 Costruita sulle specifiche dell'**Allegato A** (vedi `docs/COPERTURA_ALLEGATO_A.md` per lo stato di ogni requisito).
 
 ## Stack
-Next.js 15 (App Router) · TypeScript · Tailwind 3 · Postgres 16 (Drizzle ORM) · server actions.
+Next.js 15 (App Router) · TypeScript · Tailwind 3 · SQLite (un solo file, via Drizzle ORM) · server actions.
+Per la produzione il piano è passare a Postgres in UE (stesso Drizzle, schemi e ruoli separati).
 Nessun servizio esterno obbligatorio per girare: pagamenti e video hanno adattatori **simulati** (`mock`) e lo scheletro dei veri
 (Stripe, Whereby), da collaudare con le chiavi reali.
 
-## Avvio in locale
+## Avvio in locale (un solo comando)
+Serve solo **Node 22**. Nessun database da installare: usa un file SQLite (`data/wm.db`).
 ```bash
+git clone https://github.com/samueldanesi/mvpworkingmom && cd mvpworkingmom
 npm install
-cp .env.example .env            # poi generare AUTH_SECRET e FIELD_ENCRYPTION_KEY (vedi sotto)
-# serve un Postgres con ruolo/db `wm`/`workingmom` (o cambiare DATABASE_URL)
-npm run db:reset                # crea schemi e tabelle + dati dimostrativi (mai in produzione)
-npm run dev                     # http://localhost:3000
+npm run local        # crea .env, il database con dati dimostrativi e apre http://localhost:3000
 ```
-Segreti: `openssl rand -hex 32` (AUTH_SECRET), `openssl rand -base64 32` (FIELD_ENCRYPTION_KEY).
 Le email non partono: in sviluppo si leggono su `/dev/mailbox`.
+Per ricominciare da zero: `npm run db:reset`.
 
 ### Account dimostrativi (password `Demo-Password-1`)
 | Ruolo | Email | Note |
@@ -38,14 +38,15 @@ Codici aziendali: `ACME2026`, `BETA2026` (e casi d'errore: `SCADUTO1`, `REVOCATO
 ## Test
 ```bash
 npm test             # unitari: cifratura, TOTP, slot, anonimato, commissioni, matching
-npm run test:flows   # integrazione sui 12 scenari di collaudo §10.3 (usa il DB workingmom_test)
+npm run test:flows   # integrazione sui 12 scenari di collaudo §10.3 (usa data/test.db)
 npm run typecheck
 ```
 
 ## Architettura in breve
-- **Tre archivi separati (D-01)** come schemi Postgres: `identity` (anagrafica, prenotazioni, pagamenti), `clinical` (chat, note,
-  questionario d'ingresso: cifrati a livello di campo, AES-256-GCM), `analytics` (eventi e risposte con pseudonimo) + `keys` (mappa
-  utente→pseudonimo). In produzione: ruoli DB distinti per schema, chiavi in un KMS.
+- **Tre archivi (D-01)** separati nel codice e nei dati: identità (anagrafica, prenotazioni, pagamenti), clinico (chat, note,
+  questionario d'ingresso: cifrati a livello di campo, AES-256-GCM), analitico (eventi e risposte con pseudonimo) + mappa
+  utente→pseudonimo. **In SQLite stanno nello stesso file**: la separazione fisica (schemi e ruoli DB distinti, chiavi in un KMS) arriva
+  con il passaggio a Postgres.
 - **Anonimato (D-05/P-04)**: tutti gli indicatori HR passano da `src/lib/kpi-core.ts` (puro, testato): soglia N su ogni filtro e incrocio,
   soppressione complementare, solo utenti con consenso aggregato. I report emessi sono immutabili e versionati.
 - **Permessi (C-08)**: `src/lib/permissions.ts`; ogni pagina/azione del backoffice controlla il permesso, non solo il ruolo.
