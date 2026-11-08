@@ -58,7 +58,7 @@ export async function startSession(userId: string, role: Role) {
   jar.set(SESSION_COOKIE, await sign(userId, role, SESSION_HOURS, "session"), {
     httpOnly: true,
     sameSite: "lax",
-    secure: env.isProd,
+    secure: env.secureCookies,
     path: "/",
     maxAge: SESSION_HOURS * 3600,
   });
@@ -76,7 +76,7 @@ export async function startPre2fa(userId: string, role: Role) {
   jar.set(PRE2FA_COOKIE, await sign(userId, role, 0.1, "pre2fa"), {
     httpOnly: true,
     sameSite: "lax",
-    secure: env.isProd,
+    secure: env.secureCookies,
     path: "/",
     maxAge: 360,
   });

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 /** Posta simulata: solo in sviluppo. */
 export default async function Mailbox() {
-  if (env.isProd) notFound();
+  if (env.isProd && !env.demoMode) notFound();
   const rows = await db.select().from(emailOutbox).orderBy(desc(emailOutbox.createdAt)).limit(40);
   const linkify = (s: string) => s.split(/(https?:\/\/\S+)/g).map((p, i) => (/^https?:/.test(p) ? <a key={i} href={p}>{p}</a> : p));
   return (

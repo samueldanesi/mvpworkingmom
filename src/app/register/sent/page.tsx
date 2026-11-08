@@ -14,7 +14,7 @@ export default async function SentPage({ searchParams }: { searchParams: Promise
             Se <strong>{str(sp.email)}</strong> è un indirizzo valido, ti abbiamo inviato un link per confermarlo. Dopo la conferma potrai accedere.
           </p>
         </Card>
-        {!env.isProd && (
+        {(!env.isProd || env.demoMode) && (
           <Notice tone="blue">
             Ambiente di sviluppo: le email non vengono inviate davvero. Aprile qui: <Link href="/dev/mailbox">posta simulata</Link>.
           </Notice>

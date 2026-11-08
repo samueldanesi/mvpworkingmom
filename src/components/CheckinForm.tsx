@@ -17,7 +17,7 @@ export function CheckinForm({ moment, next }: { moment: "T0" | "T1" | "T2"; next
             <div>
               <h2>{q.title}</h2>
               <p className="text-sm text-ink-500">{q.intro.replace(/^BOZZA da validare\.\s*/, "")}</p>
-              {q.draft && !env.isProd && <p className="mt-1 text-xs text-amber-700">Domande provvisorie: da sostituire con lo strumento validato (D-04).</p>}
+              {q.draft && (!env.isProd || env.demoMode) && <p className="mt-1 text-xs text-amber-700">Domande provvisorie: da sostituire con lo strumento validato (D-04).</p>}
             </div>
             {q.items.map((it) => (
               <fieldset key={it.id} className="space-y-1.5">
