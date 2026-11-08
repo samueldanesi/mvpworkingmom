@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, count, eq, gt, gte, inArray, lt, lte, ne, or, sql } from "drizzle-orm";
 import {
   type ApptStatus,
@@ -170,7 +171,7 @@ export async function bookSessions(userId: string, specialistId: string, starts:
   }
 
   const rules = await getRules();
-  const rec = recurrenceId ?? (chosen.length > 1 ? crypto.randomUUID() : undefined);
+  const rec = recurrenceId ?? (chosen.length > 1 ? randomUUID() : undefined);
   const result: SessionBookingResult = { appointmentIds: [], pendingPaymentIds: [] };
 
   try {

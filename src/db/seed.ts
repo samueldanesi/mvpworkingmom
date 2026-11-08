@@ -2,6 +2,7 @@
  * Dati DIMOSTRATIVI per sviluppo e collaudo. Mai da eseguire in produzione.
  * Tutte le password sono "Demo-Password-1"; il 2FA del personale usa il segreto di prova DEMO_TOTP.
  */
+import "./loadenv";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";

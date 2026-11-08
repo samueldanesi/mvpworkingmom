@@ -1,4 +1,5 @@
 /* Crea il database applicando le migrazioni. `--reset` cancella prima il file. */
+import "./loadenv";
 import { rmSync } from "node:fs";
 import { runMigrations } from "./index";
 

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
@@ -18,7 +19,7 @@ const boolean = (name: string) => integer(name, { mode: "boolean" });
 const jsonb = (name: string) => text(name, { mode: "json" });
 const date = (name: string) => text(name);
 const uuid = (name: string) => text(name);
-const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
+const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
 const arr = (name: string, def: string[] = []) => text(name, { mode: "json" }).$type<string[]>().notNull().$defaultFn(() => [...def]);
 
 export type Role = "user" | "specialist" | "hr" | "clinical_lead" | "admin";
