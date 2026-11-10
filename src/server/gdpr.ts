@@ -6,6 +6,7 @@ import {
   clinicalReports,
   consents,
   db,
+  diaryEntries,
   familyInvites,
   gdprRequests,
   intakeProfiles,
@@ -44,6 +45,7 @@ export async function exportUserData(userId: string) {
     payments: await db.select().from(payments).where(eq(payments.userId, userId)),
     invoices: await db.select().from(invoices).where(eq(invoices.userId, userId)),
     messages: msgs.map((m) => ({ at: m.createdAt, fromMe: m.senderId === userId, text: decryptText(m.bodyEnc) })),
+    diary: (await db.select().from(diaryEntries).where(eq(diaryEntries.userId, userId))).map((d) => ({ at: d.createdAt, mood: d.mood, text: decryptText(d.contentEnc) })),
     checkins: map ? await db.select().from(responses).where(eq(responses.pseudonym, map.pseudonym)) : [],
   };
 }
@@ -63,6 +65,7 @@ export async function eraseUser(userId: string, actor: { id: string; role: strin
     .where(and(eq(appointments.userId, userId), or(eq(appointments.status, "booked"), eq(appointments.status, "pending_payment"))));
   for (const a of future) await cancelAppointment(a.id, { id: userId, role: "user" }, { force: true }).catch(() => {});
 
+  await db.delete(diaryEntries).where(eq(diaryEntries.userId, userId));
   const ths = await db.select().from(threads).where(eq(threads.userId, userId));
   if (ths.length) {
     const msgs = await db.select({ id: messages.id }).from(messages).where(inArray(messages.threadId, ths.map((t) => t.id)));

@@ -13,6 +13,7 @@ const ADMIN_NAV: { href: string; label: string; perm?: Permission }[] = [
   { href: "/admin/gdpr", label: "GDPR", perm: "gdpr.handle" },
   { href: "/admin/audit", label: "Accessi", perm: "audit.view" },
   { href: "/admin/emails", label: "Email", perm: "templates.edit" },
+  { href: "/admin/integrations", label: "Integrazioni", perm: "staff.manage" },
   { href: "/admin/settings", label: "Regole e ruoli", perm: "staff.manage" },
 ];
 
@@ -24,6 +25,7 @@ export function navFor(role: Role): NavItem[] {
         { href: "/app/matching", label: "Specialisti" },
         { href: "/app/appointments", label: "Appuntamenti" },
         { href: "/app/chat", label: "Chat" },
+        { href: "/app/diary", label: "Diario" },
         { href: "/app/checkin", label: "Check-in" },
         { href: "/app/invoices", label: "Fatture" },
         { href: "/app/support", label: "Assistenza" },
@@ -47,6 +49,8 @@ export function navFor(role: Role): NavItem[] {
         { href: "/hr/program", label: "Programma" },
         { href: "/hr/codes", label: "Codici" },
         { href: "/hr/credits", label: "Crediti" },
+        { href: "/hr/surveys", label: "Indagine" },
+        { href: "/hr/events", label: "Eventi" },
         { href: "/hr/reports", label: "Report" },
         { href: "/hr/launch", label: "Lancio" },
       ];

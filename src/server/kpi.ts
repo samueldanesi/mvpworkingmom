@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { companies, creditLedger, db, events, reports, responses, subjects, users } from "@/db";
 import { computeKpis, DEFINITIONS_VERSION, type EventRow, type ResponseRow, type SubjectRow } from "@/lib/kpi-core";
 import { getRules } from "./settings";
+import { k14 } from "./surveys";
 
 export type HrFilters = { from: Date; to: Date; site?: string; area?: string };
 
@@ -24,6 +25,9 @@ export async function kpisForCompany(companyId: string, f: HrFilters) {
     includedSessions: co.includedSessions,
     kMin: rules.kMin,
   });
+  const s14 = await k14(companyId);
+  const k14idx = out.kpis.findIndex((k) => k.key === "K-14");
+  if (k14idx >= 0 && !out.belowThreshold && !f.site && !f.area) out.kpis[k14idx] = { ...out.kpis[k14idx], value: s14.value, n: s14.n, suppressed: s14.suppressed, note: s14.note };
   const sites = [...new Set((await db.select({ s: subjects.site }).from(subjects).where(eq(subjects.companyId, companyId))).map((r) => r.s).filter(Boolean))] as string[];
   return { ...out, kMin: rules.kMin, company: co, sites };
 }

@@ -1,3 +1,5 @@
+import { sendPush, sendSms } from "@/lib/integrations";
+import { randomUUID } from "node:crypto";
 import { and, count, eq, gt, gte, inArray, lt, lte, ne, or, sql } from "drizzle-orm";
 import {
   type ApptStatus,
@@ -170,7 +172,7 @@ export async function bookSessions(userId: string, specialistId: string, starts:
   }
 
   const rules = await getRules();
-  const rec = recurrenceId ?? (chosen.length > 1 ? crypto.randomUUID() : undefined);
+  const rec = recurrenceId ?? (chosen.length > 1 ? randomUUID() : undefined);
   const result: SessionBookingResult = { appointmentIds: [], pendingPaymentIds: [] };
 
   try {
@@ -533,6 +535,8 @@ async function remind(key: "reminder_24h" | "reminder_1h", a: typeof appointment
     time: fmtTime(a.startsAt, user.timezone),
     link: `${env.appUrl}/app/appointments/${a.id}`,
   });
+  await sendSms(user.phone ?? user.email, key === "reminder_24h" ? `Promemoria: domani alle ${fmtTime(a.startsAt, user.timezone)} con ${spec.fullName}.` : `Tra un'ora: appuntamento con ${spec.fullName}.`);
+  await sendPush(user.id, `Promemoria appuntamento con ${spec.fullName}`);
   await notify(user.id, key === "reminder_24h" ? `Promemoria: domani alle ${fmtTime(a.startsAt, user.timezone)} con ${spec.fullName}.` : `Tra poco: appuntamento con ${spec.fullName}.`, `/app/appointments/${a.id}`);
 }
 

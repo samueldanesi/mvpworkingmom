@@ -1,5 +1,32 @@
 # Copertura dell'Allegato A
 
+## Aggiornamento MVP con dati simulati (9.11.2026)
+
+L'MVP è completo per la demo: tutte le integrazioni esterne sono **simulate** (nessuna chiamata reale, tutto registrato in `/admin/integrations`).
+
+| ID | Ora | Come |
+|---|---|---|
+| B-10, K-14 | ✅ | `/hr/surveys` (HR) e pagina pubblica anonima `/survey/<token>`; K-14 con confronto tra rilevazioni e soglia D-05 |
+| B-05 | ✅ | `expireCredits`: i crediti residui di aziende con contratto scaduto passano a «scaduti» (cron o `/admin/integrations`) |
+| D-08 | ✅ | `runRetention` con tempi configurabili in `/admin/integrations` (valori da concordare col DPO) |
+| S-12 | ✅ | Valutazione 1-5 dell'utente dopo il colloquio/seduta; media per specialista sopra soglia |
+| C-03 | ✅ | Tassi per canale/azienda e per specialista nella panoramica backoffice |
+| C-01 | ✅ | Cronologia unificata nella scheda utente (appuntamenti, pagamenti, ticket, accessi staff) |
+| C-02 | 🟡 simulato | Sync CRM finta, registro in `/admin/integrations` |
+| S-04, T-06 | 🟡 simulato | Collega Google/Outlook dall'agenda dello specialista |
+| S-09 | 🟡 simulato | «Segna pagato» esegue un trasferimento Connect finto |
+| T-07 | 🟡 simulato | Ogni fattura viene «inviata» a SDI e Tessera Sanitaria (finti) |
+| T-05, C-10 | 🟡 simulato | SMS e push finti accanto alle email nei promemoria |
+| T-01 | ✅ | Service worker e pagina offline (testi in italiano; file di traduzione non ancora predisposto) |
+| B-11 | ✅ | `/hr/events`: calendario talk e workshop (genitorialità, carico di cura, rientro dalla maternità), prenotabili dall'azienda |
+| U-13 | ✅ simulato | Pagina di pagamento con carta di prova e «buono welfare (simulato)» |
+| B-09 | ✅ | Report PDF/CSV e «Export certificazioni» (CSV con gli indicatori utili a UNI/PdR 125 e 192) |
+| T-12 | ✅ simulato | `/admin/integrations`: copia di sicurezza e prova di ripristino |
+| C-05, C-11 | ✅ | Soddisfazione media per specialista nella scheda in backoffice |
+| T-11 | ✅ | CI GitHub Actions (typecheck, test, build) |
+
+Restano fuori dall'MVP, come da §10.1: T-10 (welfare diretto e SSO), app nativa, più lingue. I punti ⏳ dipendono dalle decisioni della Committente.
+
 Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/testi provvisori · 🔌 pronto ma da collegare/collaudare con account reali · ⛔ non fatto · ⏳ bloccato da una decisione della Committente
 
 ## Utente (§3)
@@ -20,7 +47,7 @@ Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/t
 | U-13 | 🟡🔌 | Crediti prima del personale ✅. Checkout **simulato**; Stripe Checkout/Connect scritto, non provato. Apple/Google Pay passano da Stripe. Buono welfare: non integrato (solo fattura, B-06). |
 | U-14 | 🟡 | Agenda e PDF per seduta ✅. **Non è fattura elettronica SDI** (T-07). |
 | U-15 | 🟡 | T0/T1/T2 ✅. WHO-5 reale; carico mentale/di cura/conflitto sono **bozze** da sostituire (D-04). |
-| U-16 | ⛔ | Diario: "dopo l'MVP". |
+| U-16 | ✅ | Diario privato con umore e note, cifrato (`/app/diary`). Incluso nell'esportazione e nella cancellazione dei dati. |
 | U-17 | ✅ | Modifica dati, consensi, export JSON, cancellazione account. |
 | U-18 | ✅ | Ticket + FAQ. |
 

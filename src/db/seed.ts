@@ -2,6 +2,7 @@
  * Dati DIMOSTRATIVI per sviluppo e collaudo. Mai da eseguire in produzione.
  * Tutte le password sono "Demo-Password-1"; il 2FA del personale usa il segreto di prova DEMO_TOTP.
  */
+import "./loadenv";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
@@ -11,6 +12,8 @@ import {
   availabilityRules,
   careRelationships,
   companies,
+  companySurveys,
+  trainingEvents,
   consents,
   creditLedger,
   db,
@@ -19,6 +22,7 @@ import {
   messages,
   payments,
   pseudonymMap,
+  ratings,
   responses,
   specialistProfiles,
   subjects,
@@ -189,6 +193,26 @@ async function main() {
   await db.insert(responses).values(respRows);
   void pseudonymMap;
   void newPseudonym;
+
+  // B-10 / K-14: due rilevazioni dell'indagine aziendale anonima (14 e 18 risposte: sopra la soglia)
+  for (const [round, n, base] of [[1, 14, 0.45], [2, 18, 0.62]] as const) {
+    const [sv] = await db.insert(companySurveys).values({ companyId: acme.id, title: `Indagine genitorialità e cura — rilevazione ${round}`, token: `demo-acme-r${round}`, round, status: round === 1 ? "closed" : "open", createdAt: DateTime.now().minus({ days: round === 1 ? 90 : 10 }).toJSDate() }).returning();
+    const rows = Array.from({ length: n }, (_, i) => {
+      const pick = (off: number) => Math.min(5, Math.max(1, Math.round(1 + ((i * 7 + off) % 5) * 0.5 + base * 3)));
+      const items = { support: pick(0), balance: pick(1), culture: pick(2) };
+      return { pseudonym: `sv_demo_${round}_${i}`, instrument: "company_survey", version: "1", moment: sv.id, score: items.support, items };
+    });
+    await db.insert(responses).values(rows);
+  }
+  // B-11: calendario eventi
+  await db.insert(trainingEvents).values([
+    { title: "Genitorialità e lavoro: come organizzarsi", topic: "genitorialita", description: "Talk con una psicologa su equilibrio tra carriera e famiglia.", startsAt: DateTime.now().plus({ days: 14, hours: 2 }).toJSDate(), durationMin: 60 },
+    { title: "Il carico di cura in famiglia", topic: "carico_di_cura", description: "Workshop su divisione dei compiti e carico mentale.", startsAt: DateTime.now().plus({ days: 25 }).toJSDate(), durationMin: 90 },
+    { title: "Rientro dalla maternità", topic: "rientro_maternita", description: "Incontro per chi rientra al lavoro e per i suoi responsabili.", startsAt: DateTime.now().plus({ days: 40 }).toJSDate(), durationMin: 60 },
+  ]);
+  // S-12: qualche valutazione sulle sedute già svolte
+  const done = await db.select().from(appointments).where(eq(appointments.status, "completed"));
+  for (const [i, a] of done.entries()) await db.insert(ratings).values({ appointmentId: a.id, userId: a.userId, specialistId: a.specialistId, score: 4 + (i % 2) }).onConflictDoNothing();
 
   console.log("Seed completato.");
   console.log(`Password per tutti: ${PASSWORD}  ·  2FA staff/specialisti (segreto di prova): ${DEMO_TOTP}`);

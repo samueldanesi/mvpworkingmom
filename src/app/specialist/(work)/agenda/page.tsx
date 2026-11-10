@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
+import { calendarAction } from "@/app/actions/extra";
+import { calendarState } from "@/lib/integrations";
 import { addAvailabilityAction, addExceptionAction, removeAvailabilityAction, removeExceptionAction } from "@/app/actions/specialist";
 import { Badge, Button, Card, Empty, Field, PageHeader, Sp } from "@/components/ui";
 import { availabilityExceptions, availabilityRules, db } from "@/db";
@@ -17,10 +19,24 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<R
   const rules = (await db.select().from(availabilityRules).where(eq(availabilityRules.specialistId, u.id))).sort((a, b) => a.weekday - b.weekday || a.startMin - b.startMin);
   const exc = await db.select().from(availabilityExceptions).where(eq(availabilityExceptions.specialistId, u.id));
   const appts = await agendaFor(u.id, new Date(Date.now() - 14 * 86_400_000), new Date(Date.now() + 30 * 86_400_000));
+  const cal = { google: await calendarState(u.id, "google"), outlook: await calendarState(u.id, "outlook") };
   return (
     <>
-      <PageHeader title="Agenda" subtitle={`Gli orari sono nel tuo fuso: ${u.timezone}. Sincronizzazione Google/Outlook: ogni appuntamento ha il file .ics; la sincronizzazione bidirezionale è prevista dopo l'MVP.`} />
+      <PageHeader title="Agenda" subtitle={`Gli orari sono nel tuo fuso: ${u.timezone}.`} />
       <Sp sp={sp} />
+      <Card className="mb-6 space-y-2">
+        <h2>Sincronizzazione calendari <Badge>simulata</Badge></h2>
+        <p className="text-sm text-ink-600">Collega il tuo calendario: gli appuntamenti confermati vi compaiono e le tue occupazioni bloccano gli slot. Ogni appuntamento ha comunque il file .ics.</p>
+        <div className="flex flex-wrap gap-3">
+          {(["google", "outlook"] as const).map((p) => (
+            <form key={p} action={calendarAction} className="flex items-center gap-2 text-sm">
+              <input type="hidden" name="provider" value={p} /><input type="hidden" name="op" value={cal[p] ? "disconnect" : "connect"} />
+              <span>{p === "google" ? "Google Calendar" : "Outlook"}: {cal[p] ? <Badge tone="green">collegato</Badge> : <Badge>non collegato</Badge>}</span>
+              <Button variant="secondary">{cal[p] ? "Scollega" : "Collega"}</Button>
+            </form>
+          ))}
+        </div>
+      </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           <Card className="space-y-3">

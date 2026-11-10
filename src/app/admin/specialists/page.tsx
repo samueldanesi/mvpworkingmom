@@ -1,7 +1,7 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { publishSpecialistAction, reviewProfileChangesAction, setSpecialistStatusAction } from "@/app/actions/admin";
 import { Badge, Button, Card, Empty, Field, PageHeader, Sp } from "@/components/ui";
-import { appointments, db, specialistDocuments, specialistProfiles, users } from "@/db";
+import { appointments, db, ratings, specialistDocuments, specialistProfiles, users } from "@/db";
 import { SPECIALTIES } from "@/lib/constants";
 import { requireStaff } from "@/lib/guard";
 
@@ -17,6 +17,7 @@ export default async function Specialists({ searchParams }: { searchParams: Prom
   const rows = await db.select({ p: specialistProfiles, u: users }).from(specialistProfiles).innerJoin(users, eq(users.id, specialistProfiles.userId)).orderBy(desc(specialistProfiles.createdAt));
   const stats = await db.select({ id: appointments.specialistId, done: sql<number>`count(*) filter (where status='completed')`, noShow: sql<number>`count(*) filter (where status='no_show_user')`, cancelledBy: sql<number>`count(*) filter (where status='cancelled_by_specialist')`, booked: sql<number>`count(*) filter (where status='booked')` }).from(appointments).groupBy(appointments.specialistId);
   const st = new Map(stats.map((s) => [s.id, s]));
+  const rat = new Map((await db.select({ id: ratings.specialistId, n: sql<number>`count(*)`, avg: sql<number>`avg(score)` }).from(ratings).groupBy(ratings.specialistId)).map((r) => [r.id, r]));
   const docs = await db.select().from(specialistDocuments);
   return (
     <>
@@ -36,6 +37,7 @@ export default async function Specialists({ searchParams }: { searchParams: Prom
                 <p className="text-sm text-ink-700">{p.specializations.map((x) => SPECIALTIES[x] ?? x).join(", ") || "—"}</p>
                 {p.cvText && <details className="text-sm"><summary className="cursor-pointer text-brand-700">Curriculum</summary><p className="mt-1 whitespace-pre-wrap text-ink-700">{p.cvText}</p></details>}
                 {mine.length > 0 && <p className="text-sm">Documenti: {mine.map((d) => <a key={d.id} href={`/api/specialist-docs/${d.id}`} className="mr-3">{d.filename}</a>)}</p>}
+                {p.status === "approved" && rat.get(u.id) && <p className="text-xs text-ink-500">Soddisfazione media {Math.round(rat.get(u.id)!.avg * 10) / 10}/5 ({rat.get(u.id)!.n} valutazioni)</p>}
                 {p.status === "approved" && s && <p className="text-xs text-ink-500">Capacità {p.weeklyCapacity}/sett. · svolte {s.done} · assenze utenti {s.noShow} · annullate dallo specialista {s.cancelledBy} · in agenda {s.booked}</p>}
                 {p.pendingChanges && (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">

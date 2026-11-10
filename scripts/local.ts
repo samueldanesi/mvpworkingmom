@@ -8,6 +8,16 @@ import { randomBytes } from "node:crypto";
 import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+const major = Number(process.versions.node.split(".")[0]);
+if (major < 20) {
+  console.error(`\n✋ Hai Node ${process.versions.node}: serve la versione 20 o più recente (consigliata la 22).\n`);
+  console.error("   Con conda:  conda create -n wm -c conda-forge nodejs=22 -y && conda activate wm");
+  console.error("   Con nvm:    nvm install 22 && nvm use 22");
+  console.error("   Con brew:   brew install node@22\n");
+  console.error("   Poi:        rm -rf node_modules && npm install && npm run local\n");
+  process.exit(1);
+}
+
 const root = path.resolve(__dirname, "..");
 
 if (!existsSync(path.join(root, ".env"))) {

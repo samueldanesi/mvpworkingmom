@@ -11,7 +11,7 @@ Nessun servizio esterno obbligatorio per girare: pagamenti e video hanno adattat
 (Stripe, Whereby), da collaudare con le chiavi reali.
 
 ## Avvio in locale (un solo comando)
-Serve solo **Node 22**. Nessun database da installare: usa un file SQLite (`data/wm.db`).
+Serve solo **Node 22** (va bene anche la 20; la 18 non basta: `node -v` per controllare). Nessun database da installare: usa un file SQLite (`data/wm.db`).
 ```bash
 git clone https://github.com/samueldanesi/mvpworkingmom && cd mvpworkingmom
 npm install

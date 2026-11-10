@@ -4,14 +4,14 @@
 
 :root { color-scheme: light; }
 html { -webkit-text-size-adjust: 100%; }
-body { @apply bg-[#fbf8f6] text-ink-800 antialiased; }
-a { @apply text-brand-700 underline-offset-2; }
+body { @apply bg-white text-ink-800 antialiased; }
+a { @apply text-brand-600 underline-offset-2; }
 a:hover { @apply underline; }
-h1 { @apply text-2xl font-semibold text-ink-900; }
-h2 { @apply text-lg font-semibold text-ink-900; }
+h1 { @apply text-3xl font-semibold tracking-tight text-ink-900; }
+h2 { @apply text-xl font-semibold tracking-tight text-ink-900; }
 h3 { @apply text-base font-semibold text-ink-900; }
-input, select, textarea { @apply w-full rounded-lg border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100; }
-input[type="checkbox"], input[type="radio"] { @apply w-auto accent-[#b94430]; }
+input, select, textarea { @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100; }
+input[type="checkbox"], input[type="radio"] { @apply w-auto accent-[#d63f36]; }
 label { @apply text-sm font-medium text-ink-700; }
 table { @apply w-full text-left text-sm; }
 th { @apply border-b border-ink-100 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-500; }

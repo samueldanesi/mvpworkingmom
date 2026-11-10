@@ -27,7 +27,9 @@ import { readableCode } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { done, fail, field, fields, num } from "@/lib/flash";
 import { requireStaff } from "@/lib/guard";
+import { payoutToSpecialist, syncCompanyToCrm } from "@/lib/integrations";
 import { sendMail } from "@/lib/mail";
+import { createBackup, expireCredits, runRetention, setRetention, verifyBackup } from "@/server/maintenance";
 import { createAuthToken } from "@/lib/tokens";
 import { nextNumber, refundPayment } from "@/server/billing";
 import { eraseUser } from "@/server/gdpr";
@@ -254,9 +256,11 @@ export async function generatePayoutsAction(fd: FormData) {
 
 export async function markPayoutPaidAction(fd: FormData) {
   const u = await requireStaff("payouts.run");
-  await db.update(payouts).set({ status: "paid", paidAt: new Date(), providerRef: `mock_tr_${Date.now()}` }).where(eq(payouts.id, field(fd, "id")));
+  const [po] = await db.select().from(payouts).where(eq(payouts.id, field(fd, "id"))).limit(1);
+  const ref = await payoutToSpecialist(po.id, po.netCents);
+  await db.update(payouts).set({ status: "paid", paidAt: new Date(), providerRef: ref }).where(eq(payouts.id, po.id));
   await audit(u, "payout_paid", "payout", field(fd, "id"));
-  done("/admin/finance", "Segnato come pagato (in produzione: trasferimento Stripe Connect).");
+  done("/admin/finance", "Trasferimento allo specialista eseguito (simulato).");
 }
 
 export async function createCompanyInvoiceAction(fd: FormData) {
@@ -322,4 +326,48 @@ export async function saveTemplateAction(fd: FormData) {
   await db.insert(emailTemplates).values({ key, subject: field(fd, "subject"), body: field(fd, "body") }).onConflictDoUpdate({ target: emailTemplates.key, set: { subject: field(fd, "subject"), body: field(fd, "body"), updatedAt: new Date() } });
   await audit(u, "template_saved", "template", key);
   done("/admin/emails", "Modello salvato.");
+}
+
+/* ── integrazioni simulate e manutenzione (C-02, B-05, D-08) ── */
+export async function syncCrmAction(fd: FormData) {
+  const u = await requireStaff("companies.manage");
+  const rows = await db.select().from(companies);
+  for (const c of rows) await syncCompanyToCrm(c.id, c.name, c.pipelineStage);
+  await audit(u, "crm_sync", "company");
+  done("/admin/integrations", `${rows.length} aziende sincronizzate con il CRM (simulato).`);
+}
+export async function runMaintenanceAction() {
+  const u = await requireStaff("staff.manage");
+  const exp = await expireCredits();
+  const p = await runRetention();
+  await audit(u, "maintenance_run", "system");
+  done("/admin/integrations", `Crediti scaduti: ${exp}. Eliminati: ${p.email} email, ${p.notifications} notifiche, ${p.tokens} token, ${p.logs} log, ${p.messages} messaggi, ${p.notes} note.`);
+}
+export async function saveRetentionAction(fd: FormData) {
+  const u = await requireStaff("staff.manage");
+  const n = (k: string, d: number) => Math.max(1, num(fd, k) ?? d);
+  await setRetention({ outboxDays: n("outboxDays", 365), notificationsDays: n("notificationsDays", 180), logsDays: n("logsDays", 365), clinicalDays: n("clinicalDays", 3650) });
+  await audit(u, "retention_saved", "system");
+  done("/admin/integrations", "Tempi di conservazione salvati.");
+}
+
+/** T-12: backup e prova di ripristino. */
+export async function backupAction() {
+  const u = await requireStaff("staff.manage");
+  const name = await createBackup();
+  await audit(u, "backup_created", "system", name);
+  done("/admin/integrations", `Copia di sicurezza creata: ${name}`);
+}
+export async function verifyBackupAction(fd: FormData) {
+  const u = await requireStaff("staff.manage");
+  const name = field(fd, "name");
+  let msg: string;
+  try {
+    const r = await verifyBackup(name);
+    msg = `Prova di ripristino riuscita su ${name}: ${r.users} utenti e ${r.appointments} appuntamenti recuperabili.`;
+  } catch (e) {
+    fail("/admin/integrations", `Prova di ripristino fallita: ${(e as Error).message}`);
+  }
+  await audit(u, "backup_verified", "system", name);
+  done("/admin/integrations", msg!);
 }

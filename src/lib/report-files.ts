@@ -10,7 +10,9 @@ function kpisOf(r: ReportLike): Kpi[] {
 const cell = (c: string | number | null) => `"${String(c ?? "").replace(/"/g, '""')}"`;
 
 /** B-09 / T-09: CSV generato dal sistema, con definizioni, versione e numerosità. */
-export function reportCsv(companyName: string, r: ReportLike): string {
+export const CERT_KPIS = ["K-01", "K-04", "K-05", "K-11", "K-14", "K-15a", "K-15b", "K-15c", "K-15d"];
+
+export function reportCsv(companyName: string, r: ReportLike, opts: { cert?: boolean } = {}): string {
   const rows: (string | number | null)[][] = [
     ["Azienda", companyName],
     ["Periodo", `${r.periodStart} / ${r.periodEnd}`],
@@ -21,7 +23,8 @@ export function reportCsv(companyName: string, r: ReportLike): string {
     [],
     ["ID", "Indicatore", "Valore", "Unità", "Numerosità", "Stato", "Definizione", "Dettaglio"],
   ];
-  for (const k of kpisOf(r)) {
+  if (opts.cert) rows.splice(6, 0, ["Esportazione", "Evidenze misurabili per UNI/PdR 125:2022 e UNI/PdR 192:2026 (non costituisce una certificazione; il collegamento puntuale con le prassi va concordato con un lead auditor)"]);
+  for (const k of kpisOf(r).filter((x) => !opts.cert || CERT_KPIS.includes(x.key))) {
     rows.push([k.key, k.label, k.value, k.unit, k.n, k.suppressed ? "non mostrato (sotto soglia o non disponibile)" : "ok", k.definition, k.note ?? ""]);
     for (const c of k.breakdown ?? []) rows.push([k.key, `  ${c.label}`, c.value, k.unit, c.n, c.suppressed ? "non mostrato (sotto soglia)" : "ok", "", ""]);
   }

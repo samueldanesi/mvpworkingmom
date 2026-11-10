@@ -1,5 +1,6 @@
 import { safeEqual } from "@/lib/crypto";
 import { sendReminders } from "@/server/booking";
+import { expireCredits, runRetention } from "@/server/maintenance";
 import { expireHolds } from "@/server/slotsDb";
 
 /**
@@ -12,5 +13,7 @@ export async function GET(req: Request) {
   if (!secret || !safeEqual(given, secret)) return new Response("Non autorizzato", { status: 401 });
   await expireHolds();
   const sent = await sendReminders();
-  return Response.json({ ok: true, sent });
+  const expiredCredits = await expireCredits();
+  const purged = await runRetention();
+  return Response.json({ ok: true, sent, expiredCredits, purged });
 }

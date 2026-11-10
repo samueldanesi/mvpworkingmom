@@ -2,12 +2,13 @@
 
 import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { accessCodes, companies, db } from "@/db";
+import { accessCodes, companies, db, eventBookings } from "@/db";
 import { audit } from "@/lib/audit";
 import { requireUser } from "@/lib/auth";
 import { readableCode } from "@/lib/crypto";
 import { done, fail, field, num } from "@/lib/flash";
 import { issueReport } from "@/server/kpi";
+import { closeSurvey, createSurvey } from "@/server/surveys";
 
 async function hr() {
   const u = await requireUser({ roles: ["hr"] });
@@ -65,4 +66,32 @@ export async function issueReportAction(fd: FormData) {
   const r = await issueReport(companyId, { from, to }, u.id);
   await audit(u, "report_issued", "report", r.id);
   redirect(`/hr/reports/${r.id}?ok=${encodeURIComponent(`Report emesso (versione ${r.version}).`)}`);
+}
+
+/** B-10: indagine aziendale anonima. */
+export async function createSurveyAction(fd: FormData) {
+  const { u, companyId } = await hr();
+  const title = field(fd, "title") || "Indagine su genitorialità e cura";
+  await createSurvey(companyId, title);
+  await audit(u, "survey_created", "company", companyId);
+  done("/hr/surveys", "Indagine creata: condividi il link con tutti i dipendenti.");
+}
+export async function closeSurveyAction(fd: FormData) {
+  const { u, companyId } = await hr();
+  await closeSurvey(companyId, field(fd, "id"));
+  await audit(u, "survey_closed", "company", companyId);
+  done("/hr/surveys", "Indagine chiusa.");
+}
+
+/** B-11: prenotazione di un evento per l'azienda. */
+export async function bookEventAction(fd: FormData) {
+  const { u, companyId } = await hr();
+  const eventId = field(fd, "eventId");
+  if (field(fd, "op") === "cancel") {
+    await db.delete(eventBookings).where(and(eq(eventBookings.eventId, eventId), eq(eventBookings.companyId, companyId)));
+    done("/hr/events", "Prenotazione annullata.");
+  }
+  await db.insert(eventBookings).values({ eventId, companyId }).onConflictDoNothing();
+  await audit(u, "event_booked", "company", companyId);
+  done("/hr/events", "Evento prenotato per la tua azienda.");
 }

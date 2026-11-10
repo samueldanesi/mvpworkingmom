@@ -1,3 +1,4 @@
+import { sendInvoiceToSdi } from "@/lib/integrations";
 import { eq, sql } from "drizzle-orm";
 import { appointments, counters, creditLedger, db, invoices, payments, users } from "@/db";
 import { refundExternal, splitAmount } from "@/lib/payments";
@@ -40,6 +41,7 @@ export async function issueInvoice(paymentId: string, kind: "invoice" | "credit_
       totalCents: kind === "credit_note" ? -Math.abs(total) : total,
     })
     .returning();
+  await sendInvoiceToSdi(number, { health: true });
   return inv;
 }
 

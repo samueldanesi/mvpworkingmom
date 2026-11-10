@@ -3,16 +3,16 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={clsx("rounded-2xl border border-ink-100 bg-white p-5 shadow-sm", className)}>{children}</div>;
+  return <div className={clsx("rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_2px_16px_rgba(28,24,48,0.06)]", className)}>{children}</div>;
 }
 
 const btn = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700",
-  secondary: "border border-ink-200 bg-white text-ink-800 hover:bg-ink-50",
+  primary: "bg-brand-600 text-white shadow-sm hover:bg-brand-700",
+  secondary: "border border-ink-200 bg-white text-ink-800 hover:bg-blush-50",
   danger: "bg-red-600 text-white hover:bg-red-700",
   ghost: "text-ink-700 hover:bg-ink-50",
 };
-const btnBase = "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition no-underline hover:no-underline disabled:opacity-50";
+const btnBase = "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition no-underline hover:no-underline disabled:opacity-50";
 
 export function Button({ variant = "primary", className, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof btn }) {
   return <button {...p} className={clsx(btnBase, btn[variant], className)} />;
@@ -94,8 +94,8 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
 export function Logo({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} className="flex items-center gap-2 no-underline hover:no-underline">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">WM</span>
-      <span className="font-semibold text-ink-900">Working Mom</span>
+      <LogoMark className="h-8 w-8" />
+      <span className="text-xl font-bold tracking-tight text-ink-900">working mom</span>
     </Link>
   );
 }
@@ -103,4 +103,14 @@ export function Logo({ href = "/" }: { href?: string }) {
 export const Sp = (p: { sp: Record<string, string | string[] | undefined> }) => <Flash error={str(p.sp.error)} ok={str(p.sp.ok)} />;
 export function str(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
+}
+
+/** Marchio: un cuore stilizzato fatto di due «m» che si abbracciano. */
+export function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" className={className} aria-hidden>
+      <rect width="40" height="40" rx="12" className="fill-brand-600" />
+      <path d="M20 30c-6-4.2-9-7.2-9-10.8C11 16.2 13 14 15.6 14c1.8 0 3.2.9 4.4 2.6C21.200 14.900 22.600 14 24.400 14 27 14 29 16.200 29 19.200c0 3.600-3 6.600-9 10.800z" fill="#fff" />
+    </svg>
+  );
 }

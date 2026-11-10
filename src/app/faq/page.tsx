@@ -1,5 +1,4 @@
 import { PublicShell } from "@/components/Shell";
-import { Card } from "@/components/ui";
 
 export const metadata = { title: "Domande frequenti" };
 
@@ -17,14 +16,16 @@ const FAQ: [string, string][] = [
 export default function Faq() {
   return (
     <PublicShell>
-      <div className="mx-auto max-w-2xl space-y-3">
-        <h1>Domande frequenti</h1>
-        {FAQ.map(([q, a]) => (
-          <Card key={q}>
-            <h3>{q}</h3>
-            <p className="mt-1 text-sm text-ink-600">{a}</p>
-          </Card>
-        ))}
+      <div className="mx-auto max-w-2xl space-y-5">
+        <h1 className="text-4xl font-bold">Domande frequenti</h1>
+        <div className="divide-y divide-ink-100 rounded-3xl border border-ink-100">
+          {FAQ.map(([q, a]) => (
+            <details key={q} className="group p-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between font-semibold text-ink-900 [&::-webkit-details-marker]:hidden">{q}<span className="text-xl text-brand-600 transition group-open:rotate-45">+</span></summary>
+              <p className="mt-3 text-ink-600">{a}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </PublicShell>
   );

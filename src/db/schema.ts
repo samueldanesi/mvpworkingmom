@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
@@ -18,7 +19,7 @@ const boolean = (name: string) => integer(name, { mode: "boolean" });
 const jsonb = (name: string) => text(name, { mode: "json" });
 const date = (name: string) => text(name);
 const uuid = (name: string) => text(name);
-const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
+const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
 const arr = (name: string, def: string[] = []) => text(name, { mode: "json" }).$type<string[]>().notNull().$defaultFn(() => [...def]);
 
 export type Role = "user" | "specialist" | "hr" | "clinical_lead" | "admin";
@@ -566,3 +567,79 @@ export const counters = sqliteTable("counters", {
   name: text("name").primaryKey(),
   value: integer("value").notNull(),
 });
+
+/* ───────────────────────────── MVP: integrazioni simulate, valutazioni, indagine aziendale ───────────────────────────── */
+
+/** Registro delle integrazioni esterne SIMULATE (CRM, calendari, SDI, SMS, push, bonifici). Nessuna chiamata reale. */
+export const integrationLog = sqliteTable(
+  "integration_log",
+  {
+    id: id(),
+    kind: text("kind").notNull(), // crm | calendar_google | calendar_outlook | sdi | tessera_sanitaria | sms | push | payout
+    ref: text("ref"),
+    status: text("status").notNull().default("ok"),
+    detail: text("detail"),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
+  },
+  (t) => [index("integ_kind_idx").on(t.kind), index("integ_ref_idx").on(t.ref)],
+);
+
+/** S-12: soddisfazione per seduta/colloquio (1-5), niente commenti liberi. */
+export const ratings = sqliteTable(
+  "ratings",
+  {
+    id: id(),
+    appointmentId: uuid("appointment_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    specialistId: uuid("specialist_id").notNull(),
+    score: integer("score").notNull(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
+  },
+  (t) => [uniqueIndex("rating_appt_unique").on(t.appointmentId), index("rating_spec_idx").on(t.specialistId)],
+);
+
+/** B-10: indagine aziendale anonima. Le risposte stanno nell'archivio analitico (responses) senza alcun legame con le persone. */
+export const companySurveys = sqliteTable("company_surveys", {
+  id: id(),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  title: text("title").notNull(),
+  token: text("token").notNull().unique(),
+  round: integer("round").notNull().default(1),
+  status: text("status").$type<"open" | "closed">().notNull().default("open"),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
+  closedAt: ts("closed_at"),
+});
+
+/** U-16: diario personale (umore e note). Cifrato, visibile solo all'utente: mai a specialista, azienda o backoffice. */
+export const diaryEntries = sqliteTable(
+  "diary_entries",
+  {
+    id: id(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    mood: integer("mood").notNull(), // 1-5
+    contentEnc: text("content_enc").notNull(),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
+  },
+  (t) => [index("diary_user_idx").on(t.userId, t.createdAt)],
+);
+
+/** B-11: calendario di talk e workshop prenotabili dall'azienda. */
+export const trainingEvents = sqliteTable("training_events", {
+  id: id(),
+  title: text("title").notNull(),
+  topic: text("topic").notNull(), // genitorialita | carico_di_cura | rientro_maternita
+  description: text("description").notNull(),
+  startsAt: ts("starts_at").notNull(),
+  durationMin: integer("duration_min").notNull().default(60),
+  createdAt: ts("created_at").notNull().$defaultFn(now),
+});
+export const eventBookings = sqliteTable(
+  "event_bookings",
+  {
+    id: id(),
+    eventId: uuid("event_id").notNull().references(() => trainingEvents.id),
+    companyId: uuid("company_id").notNull().references(() => companies.id),
+    createdAt: ts("created_at").notNull().$defaultFn(now),
+  },
+  (t) => [uniqueIndex("event_company_unique").on(t.eventId, t.companyId)],
+);

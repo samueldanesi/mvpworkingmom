@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, count, eq, isNull, lt, sql } from "drizzle-orm";
 import { Card, Notice, PageHeader, Sp, Stat } from "@/components/ui";
-import { clinicalReports, companies, db, events, safetyEvents, specialistProfiles, tickets, users } from "@/db";
+import { careRelationships, clinicalReports, companies, db, events, safetyEvents, specialistProfiles, subjects, tickets, users } from "@/db";
 import { requireStaff } from "@/lib/guard";
 import { can } from "@/lib/permissions";
 import { creditRegistry } from "@/server/kpi";
@@ -27,6 +27,23 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const f = new Map(funnelRows.map((r) => [r.t, r.n]));
   const base = Math.max(1, ...FUNNEL.slice(0, 4).map(([k]) => f.get(k) ?? 0));
 
+  // C-03: tassi di passaggio per canale/azienda e per specialista
+  const chanRows = await db
+    .select({ co: subjects.companyId, t: events.type, n: sql<number>`count(distinct ${events.pseudonym})` })
+    .from(events).innerJoin(subjects, eq(subjects.pseudonym, events.pseudonym))
+    .where(sql`${events.type} in ('registered','intro_done','session_done')`).groupBy(subjects.companyId, events.type);
+  const coNames = new Map((await db.select({ id: companies.id, name: companies.name }).from(companies)).map((c) => [c.id, c.name]));
+  const chans = new Map<string, { reg: number; intro: number; sess: number }>();
+  for (const r of chanRows) {
+    const k = r.co ? coNames.get(r.co) ?? "Azienda" : "Privati (B2C)";
+    const e = chans.get(k) ?? { reg: 0, intro: 0, sess: 0 };
+    if (r.t === "registered") e.reg = r.n; else if (r.t === "intro_done") e.intro = r.n; else e.sess = r.n;
+    chans.set(k, e);
+  }
+  const specRows = await db
+    .select({ name: users.fullName, intro: sql<number>`count(*) filter (where ${careRelationships.status} in ('intro_done','active','interrupted','ended','changed'))`, active: sql<number>`count(*) filter (where ${careRelationships.status} = 'active')`, changed: sql<number>`count(*) filter (where ${careRelationships.status} = 'changed')` })
+    .from(careRelationships).innerJoin(users, eq(users.id, careRelationships.specialistId)).groupBy(users.id, users.fullName);
+  const pc = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
   const cos = can(u.role, "codes.manage") ? await db.select().from(companies).where(eq(companies.status, "active")) : [];
   const alerts: string[] = [];
   for (const c of cos) {
@@ -63,6 +80,20 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           })}
         </ul>
       </Card>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card className="space-y-2 p-0">
+          <h2 className="p-5 pb-0">Passaggi per canale e azienda</h2>
+          <table><thead><tr><th>Canale</th><th>Registrati</th><th>Colloquio svolto</th><th>Seduta svolta</th><th>Colloquio→seduta</th></tr></thead><tbody>
+            {[...chans].map(([k, e]) => <tr key={k}><td>{k}</td><td>{e.reg}</td><td>{e.intro}</td><td>{e.sess}</td><td>{pc(e.sess, e.intro)}</td></tr>)}
+          </tbody></table>
+        </Card>
+        <Card className="space-y-2 p-0">
+          <h2 className="p-5 pb-0">Passaggi per specialista</h2>
+          <table><thead><tr><th>Specialista</th><th>Colloqui</th><th>Prosecuzione</th><th>Cambio</th></tr></thead><tbody>
+            {specRows.map((r) => <tr key={r.name}><td>{r.name}</td><td>{r.intro}</td><td>{pc(r.active, r.intro)}</td><td>{pc(r.changed, r.intro)}</td></tr>)}
+          </tbody></table>
+        </Card>
+      </div>
       <p className="mt-4 text-xs text-ink-500"><Link href="/admin/audit">Registro accessi</Link> · ogni apertura di un dato personale richiede un motivo ed è tracciata.</p>
     </>
   );

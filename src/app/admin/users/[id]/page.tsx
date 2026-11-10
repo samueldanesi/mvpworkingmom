@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { setUserStatusAction } from "@/app/actions/admin";
 import { Badge, Button, Card, Field, Notice, PageHeader, Sp, str } from "@/components/ui";
-import { appointments, companies, db, payments, users } from "@/db";
+import { appointments, auditLog, companies, db, payments, tickets, users } from "@/db";
 import { audit } from "@/lib/audit";
 import { eur, fmtDateTime } from "@/lib/format";
 import { requireStaff } from "@/lib/guard";
@@ -32,6 +32,14 @@ export default async function UserDetail({ params, searchParams }: { params: Pro
   const [co] = u.companyId ? await db.select().from(companies).where(eq(companies.id, u.companyId)).limit(1) : [];
   const appts = await db.select().from(appointments).where(eq(appointments.userId, id)).orderBy(desc(appointments.startsAt)).limit(15);
   const pays = await db.select().from(payments).where(eq(payments.userId, id)).orderBy(desc(payments.createdAt)).limit(15);
+  const tks = await db.select().from(tickets).where(eq(tickets.userId, id)).orderBy(desc(tickets.createdAt)).limit(15);
+  const aud = await db.select().from(auditLog).where(eq(auditLog.subjectId, id)).orderBy(desc(auditLog.createdAt)).limit(15);
+  const timeline = [
+    ...appts.map((a) => ({ at: a.startsAt, text: `Appuntamento ${a.kind === "intro" ? "(colloquio)" : "(seduta)"}: ${a.status}` })),
+    ...pays.map((p) => ({ at: p.createdAt, text: `Pagamento ${eur(p.amountCents)} · ${p.source} · ${p.status}` })),
+    ...tks.map((t) => ({ at: t.createdAt, text: `Ticket «${t.subject}» (${t.status})` })),
+    ...aud.map((x) => ({ at: x.createdAt, text: `Accesso staff: ${x.action}${x.reason ? ` — ${x.reason}` : ""}` })),
+  ].sort((a, b) => b.at.getTime() - a.at.getTime());
   return (
     <>
       <PageHeader title={u.fullName ?? u.email} subtitle={`${u.email} · ruolo ${u.role}`} actions={<Badge tone={u.status === "active" ? "green" : "red"}>{u.status}</Badge>} />
@@ -43,6 +51,7 @@ export default async function UserDetail({ params, searchParams }: { params: Pro
         </Card>
         <Card className="space-y-2 text-sm"><h2>Appuntamenti recenti</h2><ul>{appts.map((a) => <li key={a.id}>{fmtDateTime(a.startsAt)} · {a.kind} · {a.status}</li>)}</ul></Card>
         <Card className="space-y-2 text-sm md:col-span-2"><h2>Pagamenti</h2><table><thead><tr><th>Data</th><th>Importo</th><th>Origine</th><th>Stato</th></tr></thead><tbody>{pays.map((p) => <tr key={p.id}><td>{fmtDateTime(p.createdAt)}</td><td>{eur(p.amountCents)}</td><td>{p.source}</td><td>{p.status}{p.refundedCents ? ` (rimborsati ${eur(p.refundedCents)})` : ""}</td></tr>)}</tbody></table></Card>
+        <Card className="space-y-2 text-sm md:col-span-2"><h2>Cronologia</h2>{timeline.length === 0 ? <p className="text-ink-500">Nessun evento.</p> : <ul className="space-y-1">{timeline.map((e, i) => <li key={i}><span className="text-ink-400">{fmtDateTime(e.at)}</span> · {e.text}</li>)}</ul>}</Card>
       </div>
     </>
   );

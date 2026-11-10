@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
+import { rateAction } from "@/app/actions/extra";
 import { cancelAppointmentAction, changeSpecialistAction, continueAction, rescheduleAction } from "@/app/actions/booking";
 import { SlotPicker } from "@/components/SlotPicker";
 import { Badge, Button, Card, Field, LinkButton, Notice, PageHeader, Sp, str } from "@/components/ui";
-import { appointments, careRelationships, db, payments, users } from "@/db";
+import { appointments, careRelationships, db, payments, ratings, users } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { eur, fmtDateTime } from "@/lib/format";
 import { getRules } from "@/server/settings";
@@ -19,6 +20,7 @@ export default async function AppointmentDetail({ params, searchParams }: { para
   const [spec] = await db.select().from(users).where(eq(users.id, a.specialistId)).limit(1);
   const [pay] = await db.select().from(payments).where(eq(payments.appointmentId, a.id)).limit(1);
   const [rel] = await db.select().from(careRelationships).where(and(eq(careRelationships.userId, u.id), eq(careRelationships.specialistId, a.specialistId))).limit(1);
+  const [rated] = await db.select().from(ratings).where(eq(ratings.appointmentId, a.id)).limit(1);
   const rules = await getRules();
   const [label, tone] = STATUS_LABEL[a.status];
   const now = Date.now();
@@ -58,6 +60,19 @@ export default async function AppointmentDetail({ params, searchParams }: { para
                   <Button variant="secondary">Cambia specialista</Button>
                 </form>
               </div>
+            </div>
+          )}
+          {a.status === "completed" && (
+            <div className="space-y-2 border-t border-ink-100 pt-4">
+              <h3>Valutazione</h3>
+              {rated ? <p className="text-sm text-ink-600">Hai valutato questo incontro con {rated.score}/5. Grazie!</p> : (
+                <form action={rateAction} className="flex flex-wrap items-center gap-3 text-sm">
+                  <input type="hidden" name="id" value={a.id} />
+                  {[1, 2, 3, 4, 5].map((v) => <label key={v} className="flex items-center gap-1"><input type="radio" name="score" value={v} required /> {v}</label>)}
+                  <Button variant="secondary">Invia</Button>
+                  <span className="text-xs text-ink-400">1 = per niente soddisfatto · 5 = molto soddisfatto. Niente commenti liberi.</span>
+                </form>
+              )}
             </div>
           )}
           {a.status === "booked" && (

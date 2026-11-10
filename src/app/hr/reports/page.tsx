@@ -24,7 +24,7 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
       </Card>
       {rows.length === 0 ? <Empty>Nessun report emesso.</Empty> : (
         <Card className="p-0"><table><thead><tr><th>Periodo</th><th>Versione</th><th>Campione</th><th>Emesso</th><th></th></tr></thead><tbody>
-          {rows.map((r) => <tr key={r.id}><td>{r.periodStart} → {r.periodEnd}</td><td>v{r.version} {r.supersedesId && <Badge tone="blue">corregge la precedente</Badge>}</td><td>{r.sampleSize}</td><td>{fmtDate(r.createdAt)}</td><td className="space-x-3"><Link href={`/hr/reports/${r.id}`}>Apri</Link><a href={`/api/reports/${r.id}/pdf`}>PDF</a><a href={`/api/reports/${r.id}/csv`}>CSV</a></td></tr>)}
+          {rows.map((r) => <tr key={r.id}><td>{r.periodStart} → {r.periodEnd}</td><td>v{r.version} {r.supersedesId && <Badge tone="blue">corregge la precedente</Badge>}</td><td>{r.sampleSize}</td><td>{fmtDate(r.createdAt)}</td><td className="space-x-3"><Link href={`/hr/reports/${r.id}`}>Apri</Link><a href={`/api/reports/${r.id}/pdf`}>PDF</a><a href={`/api/reports/${r.id}/csv`}>CSV</a><a href={`/api/reports/${r.id}/csv?cert=1`}>Export certificazioni</a></td></tr>)}
         </tbody></table></Card>
       )}
     </>

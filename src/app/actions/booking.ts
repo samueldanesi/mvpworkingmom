@@ -73,7 +73,7 @@ export async function payAction(fd: FormData) {
   const u = await requireUser({ roles: ["user"] });
   const ids = field(fd, "ids").split(",").filter(Boolean);
   const rows = await db.select().from(payments).where(and(inArray(payments.id, ids), eq(payments.userId, u.id)));
-  await completePayments(rows.map((r) => r.id), `mock_pi_${Date.now()}`);
+  await completePayments(rows.map((r) => r.id), `${field(fd, "method") === "welfare" ? "mock_welfare" : "mock_pi"}_${Date.now()}`);
   redirect(`/app/pay/result?ok=1&ids=${ids.join(",")}`);
 }
 

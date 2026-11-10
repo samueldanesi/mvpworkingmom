@@ -54,6 +54,11 @@ export default async function MockPay({ searchParams }: { searchParams: Promise<
               <input type="hidden" name="ids" value={pending.map((r) => r.p.id).join(",")} />
               <Button className="w-full">Paga {eur(total)} (carta di prova)</Button>
             </form>
+            <form action={payAction}>
+              <input type="hidden" name="ids" value={pending.map((r) => r.p.id).join(",")} />
+              <input type="hidden" name="method" value="welfare" />
+              <Button variant="secondary" className="w-full">Paga con buono welfare (simulato)</Button>
+            </form>
             <form action={payFailAction}>
               <input type="hidden" name="ids" value={pending.map((r) => r.p.id).join(",")} />
               <Button variant="secondary" className="w-full">Simula pagamento rifiutato</Button>
