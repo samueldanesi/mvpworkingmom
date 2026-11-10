@@ -16,7 +16,7 @@
     "local": "tsx scripts/local.ts",
     "totp": "tsx scripts/totp.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "render:start": "mkdir -p data && ([ -f data/wm.db ] || (NODE_ENV=development tsx src/db/setup.ts && NODE_ENV=development tsx src/db/seed.ts)) && next start -p ${PORT:-3000}"
+    "render:start": "mkdir -p data && NODE_ENV=development tsx src/db/setup.ts && ([ -f data/.seeded ] || (NODE_ENV=development tsx src/db/seed.ts && touch data/.seeded)) && next start -p ${PORT:-3000}"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
