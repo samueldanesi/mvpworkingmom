@@ -30,7 +30,10 @@ export function StepIcon({ n }: { n: 1 | 2 | 3 }) {
 }
 
 /** Telefono con l'app: elenco appuntamenti, in stile mockup. */
-export function PhoneMockup({ className }: { className?: string }) {
+export function PhoneMockup({ className, couple }: { className?: string; couple?: boolean }) {
+  const title = couple ? <>Percorso<br />di coppia</> : <>Percorso<br />genitorialità</>;
+  const who = couple ? ["Marco", "Psicologo di coppia"] : ["Laura", "Psicologa perinatale"];
+  const price = couple ? "59 €" : "49 €";
   return (
     <div className={`relative mx-auto w-[260px] ${className ?? ""}`}>
       <svg viewBox="0 0 300 330" className="absolute -left-10 top-10 -z-0 h-[420px] w-[360px]" aria-hidden>
@@ -38,13 +41,13 @@ export function PhoneMockup({ className }: { className?: string }) {
       </svg>
       <div className="relative z-10 rotate-[6deg] rounded-[36px] border-[6px] border-night-900 bg-white p-3 shadow-2xl">
         <div className="mx-auto mb-3 h-5 w-24 rounded-full bg-night-900" />
-        <p className="px-1 text-lg font-bold leading-tight text-ink-900">Percorso<br />genitorialità</p>
+        <p className="px-1 text-lg font-bold leading-tight text-ink-900">{title}</p>
         <div className="mt-3 flex items-center gap-2 rounded-2xl bg-blush-100 p-2">
-          <Portrait i={1} className="h-10 w-9 rounded-lg" />
-          <div><p className="text-xs font-semibold text-ink-900">Laura</p><p className="text-[10px] text-ink-500">Psicologa perinatale</p></div>
+          <Portrait i={couple ? 0 : 1} className="h-10 w-9 rounded-lg" />
+          <div><p className="text-xs font-semibold text-ink-900">{who[0]}</p><p className="text-[10px] text-ink-500">{who[1]}</p></div>
         </div>
         <p className="mt-3 px-1 text-[10px] font-semibold uppercase tracking-wide text-ink-500">Prossimi appuntamenti</p>
-        {[["martedì", "3 febbraio", "10:00 - 10:50", "0 €"], ["giovedì", "19 marzo", "14:00 - 14:50", "49 €"]].map(([d, n, t, p]) => (
+        {[["martedì", "3 febbraio", "10:00 - 10:50", "0 €"], ["giovedì", "19 marzo", "14:00 - 14:50", price]].map(([d, n, t, p]) => (
           <div key={n} className="mt-2 flex items-center justify-between rounded-2xl border border-ink-100 border-l-4 border-l-brand-500 bg-white p-2 shadow-sm">
             <div><p className="text-[10px] text-ink-500">{d}</p><p className="text-sm font-bold text-ink-900">{n}</p><p className="text-[10px] text-ink-500">{t}</p></div>
             <span className="text-sm font-semibold text-ink-900">{p}</span>

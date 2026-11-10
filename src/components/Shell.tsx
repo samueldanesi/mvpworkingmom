@@ -70,11 +70,18 @@ const ddItem = "block rounded-xl px-3 py-2 text-sm text-ink-800 no-underline hov
 
 /** Barra annuncio con scorrimento (marquee), come sulle piattaforme di riferimento. */
 export function AnnouncementBar() {
-  const msg = "Hai un codice aziendale? Usalo dopo la registrazione per sedute incluse e sconti 🎁";
+  const msgs = [
+    "Hai un codice aziendale? Usalo dopo la registrazione per avere le sedute incluse 🎁",
+    "Il primo colloquio di 20 minuti è gratuito 💬",
+    "Sedute in videochiamata, dall'app o dal sito 💻",
+    "Psicologi, logopedisti, consulenti del sonno e altri specialisti per la tua famiglia 👨‍👩‍👧",
+    "Scrivi al tuo specialista in chat e tieni il tuo diario nell'app 📓",
+    "Per le aziende: report aggregati e anonimi sul benessere dei dipendenti 📊",
+  ];
   return (
     <div className="no-print overflow-hidden bg-brand-100 py-2.5 text-sm font-medium text-brand-900">
       <div className="flex w-max animate-marquee gap-16 whitespace-nowrap">
-        {Array.from({ length: 8 }, (_, i) => <span key={i}>{msg}</span>)}
+        {Array.from({ length: 3 }, (_, r) => msgs.map((m, i) => <span key={`${r}-${i}`}>{m}</span>))}
       </div>
     </div>
   );

@@ -117,7 +117,7 @@ export default async function Home() {
                 </div>
                 <div className="flex items-center gap-5"><LinkButton href={cta}>Inizia dal questionario</LinkButton></div>
               </div>
-              {idx === 0 ? <PhoneMockup /> : <div className="hidden h-64 rounded-[2rem] bg-blush-100 md:block" aria-hidden />}
+              <PhoneMockup couple={idx !== 0} />
             </div>
           ))}
           <p className="text-sm text-ink-500">Per le altre specialità (logopedia, consulenza del sonno e altre) durata e prezzo sono indicati nel profilo di ogni specialista.</p>

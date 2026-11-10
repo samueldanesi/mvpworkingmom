@@ -56,6 +56,9 @@ export function totp(secret: string, at = Date.now()): string {
 export function verifyTotp(secret: string, token: string, at = Date.now(), window = 1): boolean {
   const clean = token.replace(/\s/g, "");
   if (!/^\d{6}$/.test(clean)) return false;
+  // Solo per la fase di collaudo con dati finti: codice universale, attivo se impostato DEMO_2FA_CODE.
+  const demo = process.env.DEMO_2FA_CODE;
+  if (demo && clean === demo) return true;
   const counter = Math.floor(at / 1000 / 30);
   for (let w = -window; w <= window; w++) if (hotp(secret, counter + w) === clean) return true;
   return false;
