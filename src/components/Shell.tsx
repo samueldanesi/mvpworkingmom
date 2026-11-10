@@ -112,7 +112,7 @@ export function PublicShell({ children, bare }: { children: React.ReactNode; bar
       <footer className="no-print bg-night-900 text-white/80">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-4">
           <div className="space-y-3 sm:col-span-1">
-            <span className="text-xl font-bold text-white">working mom</span>
+            <Logo light className="h-9" />
             <p className="text-sm text-white/60">Specialisti per la genitorialità, per le persone e per le aziende.</p>
           </div>
           {[

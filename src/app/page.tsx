@@ -30,7 +30,8 @@ export default async function Home() {
       <AnnouncementBar />
 
       {/* HERO */}
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-2 md:items-center md:py-20">
+      <div className="relative overflow-hidden bg-[url('/brand/pattern/pattern-rosa.svg')] bg-[length:420px] before:absolute before:inset-0 before:bg-white/80 before:content-['']">
+      <section className="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-2 md:items-center md:py-20">
         <div className="space-y-6">
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-night-900 sm:text-5xl">
             Gli specialisti <span className="bg-gradient-to-r from-night-800 to-brand-500 bg-clip-text text-transparent">giusti</span> per la tua famiglia, quando ne hai bisogno
@@ -49,6 +50,8 @@ export default async function Home() {
           {[0, 1, 2].map((i) => <Portrait key={i} i={i} className={`w-28 rounded-xl shadow-sm sm:w-36 ${i === 1 ? "mt-8" : ""}`} />)}
         </div>
       </section>
+
+      </div>
 
       {/* DARK BAND */}
       <section className="bg-night-900 text-white">

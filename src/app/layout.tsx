@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   applicationName: "Working Mom",
 };
 
-export const viewport: Viewport = { themeColor: "#d63f36", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#5b4b8a", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

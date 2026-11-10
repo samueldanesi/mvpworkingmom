@@ -91,11 +91,12 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
   );
 }
 
-export function Logo({ href = "/" }: { href?: string }) {
+/** Logo ufficiale (orizzontale). `light` = versione bianca per sfondi scuri. */
+export function Logo({ href = "/", light = false, className = "h-10" }: { href?: string; light?: boolean; className?: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2 no-underline hover:no-underline">
-      <LogoMark className="h-8 w-8" />
-      <span className="text-xl font-bold tracking-tight text-ink-900">working mom</span>
+    <Link href={href} className="flex items-center no-underline hover:no-underline" aria-label="Working Mom">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={light ? "/brand/logo-orizzontale-bianco.svg" : "/brand/logo-orizzontale.svg"} alt="Working Mom" className={`${className} w-auto`} />
     </Link>
   );
 }
@@ -105,12 +106,8 @@ export function str(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-/** Marchio: un cuore stilizzato fatto di due «m» che si abbracciano. */
+/** Pittogramma ufficiale (esagono). */
 export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden>
-      <rect width="40" height="40" rx="12" className="fill-brand-600" />
-      <path d="M20 30c-6-4.2-9-7.2-9-10.8C11 16.2 13 14 15.6 14c1.8 0 3.2.9 4.4 2.6C21.200 14.900 22.600 14 24.400 14 27 14 29 16.200 29 19.200c0 3.600-3 6.600-9 10.800z" fill="#fff" />
-    </svg>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/brand/pittogramma.svg" alt="" aria-hidden className={className} />;
 }
