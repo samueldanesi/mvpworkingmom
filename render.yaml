@@ -1,0 +1,28 @@
+# Collaudo online su Render (dati finti). Piano gratuito: il database si ricrea da solo ai riavvii.
+services:
+  - type: web
+    name: workingmom
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run render:start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: DATABASE_URL
+        value: file:./data/wm.db
+      - key: DEMO_MODE
+        value: "1"
+      - key: DEMO_2FA_CODE
+        value: "123456"
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: VIDEO_PROVIDER
+        value: mock
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: FIELD_ENCRYPTION_KEY
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
