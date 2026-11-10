@@ -3,7 +3,7 @@ import { LANGUAGES, SPECIALTIES } from "@/lib/constants";
 import { eur, fmtDateTime } from "@/lib/format";
 import type { PublicSpecialist } from "@/server/queries";
 
-export function SpecialistCard({ s, tz, reasons, highlight }: { s: PublicSpecialist; tz: string; reasons?: string[]; highlight?: boolean }) {
+export function SpecialistCard({ s, tz, reasons, highlight, rel }: { s: PublicSpecialist; tz: string; reasons?: string[]; highlight?: boolean; rel?: string }) {
   return (
     <Card className={highlight ? "border-brand-200" : ""}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -28,7 +28,9 @@ export function SpecialistCard({ s, tz, reasons, highlight }: { s: PublicSpecial
       <p className="mt-3 line-clamp-2 text-sm text-ink-700">{s.profile.approach}</p>
       <div className="mt-3 flex gap-2">
         <LinkButton href={`/app/specialists/${s.id}`} variant="secondary">Vedi profilo</LinkButton>
-        <LinkButton href={`/app/book/${s.id}?kind=intro`}>Colloquio gratuito</LinkButton>
+        {(!rel || rel === "changed") && <LinkButton href={`/app/book/${s.id}?kind=intro`}>Colloquio gratuito</LinkButton>}
+        {rel === "active" && <LinkButton href={`/app/book/${s.id}?kind=session`}>Prenota una seduta</LinkButton>}
+        {rel === "intro_booked" && <LinkButton href="/app/appointments">Vedi il tuo colloquio</LinkButton>}
       </div>
     </Card>
   );

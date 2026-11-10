@@ -205,10 +205,15 @@ async function main() {
     await db.insert(responses).values(rows);
   }
   // B-11: calendario eventi
+  const evDay = (d: number) => {
+    let t = DateTime.now().setZone("Europe/Rome").plus({ days: d }).set({ hour: 15, minute: 0, second: 0, millisecond: 0 });
+    while (t.weekday > 5) t = t.plus({ days: 1 });
+    return t.toJSDate();
+  };
   await db.insert(trainingEvents).values([
-    { title: "Genitorialità e lavoro: come organizzarsi", topic: "genitorialita", description: "Talk con una psicologa su equilibrio tra carriera e famiglia.", startsAt: DateTime.now().plus({ days: 14, hours: 2 }).toJSDate(), durationMin: 60 },
-    { title: "Il carico di cura in famiglia", topic: "carico_di_cura", description: "Workshop su divisione dei compiti e carico mentale.", startsAt: DateTime.now().plus({ days: 25 }).toJSDate(), durationMin: 90 },
-    { title: "Rientro dalla maternità", topic: "rientro_maternita", description: "Incontro per chi rientra al lavoro e per i suoi responsabili.", startsAt: DateTime.now().plus({ days: 40 }).toJSDate(), durationMin: 60 },
+    { title: "Genitorialità e lavoro: come organizzarsi", topic: "genitorialita", description: "Talk con una psicologa su equilibrio tra carriera e famiglia.", startsAt: evDay(14), durationMin: 60 },
+    { title: "Il carico di cura in famiglia", topic: "carico_di_cura", description: "Workshop su divisione dei compiti e carico mentale.", startsAt: evDay(25), durationMin: 90 },
+    { title: "Rientro dalla maternità", topic: "rientro_maternita", description: "Incontro per chi rientra al lavoro e per i suoi responsabili.", startsAt: evDay(40), durationMin: 60 },
   ]);
   // S-12: qualche valutazione sulle sedute già svolte
   const done = await db.select().from(appointments).where(eq(appointments.status, "completed"));

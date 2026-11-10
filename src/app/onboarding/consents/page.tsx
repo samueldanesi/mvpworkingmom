@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { grantConsentsAction } from "@/app/actions/onboarding";
 import { Button, Card, Sp } from "@/components/ui";
+import { requireUser } from "@/lib/auth";
 
 export const metadata = { title: "Consensi" };
 
 /** U-03 / P-01: consenso esplicito sui dati sanitari, separato da quello per i report aggregati. */
 export default async function Consents({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
+  const u = await requireUser({ roles: ["user"] });
   return (
     <Card className="space-y-5">
       <h1>I tuoi dati, le tue scelte</h1>
@@ -27,13 +29,13 @@ export default async function Consents({ searchParams }: { searchParams: Promise
             <strong>Acconsento</strong> al trattamento dei miei dati sulla salute per ricevere il servizio (obbligatorio). Puoi revocare il consenso in ogni momento dalle Impostazioni.
           </span>
         </label>
-        <label className="flex items-start gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
+        {u.companyId && <label className="flex items-start gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
           <input type="checkbox" name="aggregate" className="mt-1" />
           <span>
             <strong>Acconsento</strong> all&apos;uso dei miei dati in forma <em>aggregata e anonima</em> per i report del programma della mia azienda (facoltativo). Nessun dato individuale viene mai
             condiviso e nessun report è mostrato per gruppi piccoli.
           </span>
-        </label>
+        </label>}
         <Button>Continua</Button>
       </form>
     </Card>

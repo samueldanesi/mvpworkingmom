@@ -73,8 +73,8 @@ export default async function SpecialistHome({ searchParams }: { searchParams: P
         {toClose > 0 && <Notice tone="red">Hai {toClose} appuntamenti passati senza esito registrato: <Link href="/specialist/agenda">registrali</Link> per far maturare i compensi.</Notice>}
         <div className="grid gap-4 sm:grid-cols-3">
           <Stat label="Appuntamenti futuri" value={upcoming} />
-          <Stat label="Compensi maturati" value={eur(e.accrued.net)} hint={`${e.accrued.n} sedute, già al netto della commissione`} />
-          <Stat label="In programma" value={eur(e.upcoming.net)} hint={`${e.upcoming.n} sedute confermate`} />
+          <Stat label="Compensi maturati" value={eur(e.accrued.net)} hint={`${e.accrued.n} ${e.accrued.n === 1 ? "seduta" : "sedute"}, già al netto della commissione`} />
+          <Stat label="In programma" value={eur(e.upcoming.net)} hint={`${e.upcoming.n} ${e.upcoming.n === 1 ? "seduta confermata" : "sedute confermate"}`} />
         </div>
         <Card className="space-y-3">
           <h2>Oggi</h2>

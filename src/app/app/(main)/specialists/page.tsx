@@ -1,5 +1,7 @@
 import { SpecialistCard } from "@/components/SpecialistCard";
 import { Button, Card, Empty, Field, PageHeader, str } from "@/components/ui";
+import { eq } from "drizzle-orm";
+import { careRelationships, db } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { LANGUAGES, SPECIALTIES } from "@/lib/constants";
 import { bookableSpecialists } from "@/server/queries";
@@ -9,6 +11,7 @@ export const metadata = { title: "Tutti gli specialisti" };
 export default async function AllSpecialists({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const u = await requireUser({ roles: ["user"] });
+  const rels = await db.select().from(careRelationships).where(eq(careRelationships.userId, u.id));
   const spec = str(sp.specialty);
   const lang = str(sp.language);
   const gender = str(sp.gender);
@@ -42,7 +45,7 @@ export default async function AllSpecialists({ searchParams }: { searchParams: P
           <div className="flex items-end"><Button variant="secondary">Filtra</Button></div>
         </form>
       </Card>
-      {list.length === 0 ? <Empty>Nessuno specialista con questi filtri.</Empty> : <div className="space-y-4">{list.map((s) => <SpecialistCard key={s.id} s={s} tz={u.timezone} />)}</div>}
+      {list.length === 0 ? <Empty>Nessuno specialista con questi filtri.</Empty> : <div className="space-y-4">{list.map((s) => <SpecialistCard key={s.id} s={s} tz={u.timezone} rel={rels.find((r) => r.specialistId === s.id)?.status} />)}</div>}
     </>
   );
 }

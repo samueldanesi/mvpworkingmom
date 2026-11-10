@@ -41,7 +41,7 @@ export function scoreCandidate(c: Candidate, p: MatchPrefs, cfg: MatchConfig = D
   const areaHit = c.specializations.some((s) => wanted.includes(s));
   if (areaHit) {
     score += w.area;
-    reasons.push("Specializzata nella tua area di bisogno");
+    reasons.push("Specializzazione adatta alla tua area di bisogno");
   }
   if (c.languages.includes(p.language)) {
     score += w.language;

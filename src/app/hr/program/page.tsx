@@ -16,7 +16,7 @@ export default async function Program() {
         <Card><h2 className="mb-2">Anagrafica e contratto</h2><dl>
           {row("Ragione sociale", co.name)}{row("P.IVA", co.vatNumber ?? "—")}{row("Codice SDI / PEC", `${co.sdiCode ?? "—"} / ${co.pec ?? "—"}`)}
           {row("Dipendenti coperti", co.coveredEmployees)}{row("Durata", `${co.startsAt ? fmtDate(co.startsAt) : "—"} → ${co.endsAt ? fmtDate(co.endsAt) : "—"}`)}
-          {row("Canone annuo", eur(co.annualFeeCents))}{row("Stato", <Badge tone={co.status === "active" ? "green" : "amber"}>{co.status}</Badge>)}{row("Referente Working Mom", co.accountOwner ?? "—")}
+          {row("Canone annuo", eur(co.annualFeeCents))}{row("Stato", <Badge tone={co.status === "active" ? "green" : "amber"}>{({ active: "Attivo", suspended: "Sospeso", ended: "Concluso" } as Record<string, string>)[co.status] ?? co.status}</Badge>)}{row("Referente Working Mom", co.accountOwner ?? "—")}
         </dl></Card>
         <Card><h2 className="mb-2">Regole di copertura</h2><dl>
           {row("Sedute incluse per dipendente", co.includedSessions)}{row("Sconto sulle successive", `${co.discountPct}%`)}

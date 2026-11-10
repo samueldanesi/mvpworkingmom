@@ -50,7 +50,7 @@ export default async function Matching({ searchParams }: { searchParams: Promise
       ) : (
         <div className="space-y-4">
           {top.map((m, i) => (
-            <SpecialistCard key={m.candidate.userId} s={byId.get(m.candidate.userId)!} tz={u.timezone} reasons={m.reasons} highlight={i === 0} />
+            <SpecialistCard key={m.candidate.userId} s={byId.get(m.candidate.userId)!} tz={u.timezone} reasons={m.reasons} highlight={i === 0} rel={rels.find((r) => r.specialistId === m.candidate.userId)?.status} />
           ))}
         </div>
       )}
