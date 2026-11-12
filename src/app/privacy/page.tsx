@@ -1,17 +1,17 @@
+import Link from "next/link";
+import { LegalBlocks } from "@/components/Legal";
 import { PublicShell } from "@/components/Shell";
-import { Notice } from "@/components/ui";
+import { PRIVACY } from "@/lib/legal";
 
-export const metadata = { title: "Informativa privacy" };
+export const metadata = { title: "Privacy policy" };
 
 export default function Page() {
   return (
     <PublicShell>
-      <div className="mx-auto max-w-2xl space-y-4">
-        <h1>Informativa privacy</h1>
-        <Notice>
-          Testo segnaposto. Il testo definitivo (titolare e responsabile del trattamento, natura del servizio, basi giuridiche, tempi di conservazione, dati dei minori) deve essere
-          fornito dalla Committente e rivisto da un legale prima del lancio (Allegato A, P-01, P-03, P-12, P-13).
-        </Notice>
+      <div className="mx-auto max-w-3xl space-y-4">
+        <h1>{PRIVACY.title}</h1>
+        <LegalBlocks blocks={PRIVACY.blocks} />
+        <p className="text-sm text-ink-600">Il sito utilizza cookie e marcatori: per i dettagli consulta la <Link href="/cookie">cookie policy</Link>.</p>
       </div>
     </PublicShell>
   );

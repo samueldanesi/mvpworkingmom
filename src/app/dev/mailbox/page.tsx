@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { PublicShell } from "@/components/Shell";
 import { Card, Notice } from "@/components/ui";
 import { db, emailOutbox } from "@/db";
@@ -9,15 +10,19 @@ import { fmtDateTime } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 /** Posta simulata: solo in sviluppo. */
-export default async function Mailbox() {
+export default async function Mailbox({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  const to = (Array.isArray(sp.to) ? sp.to[0] : sp.to)?.trim().toLowerCase();
   if (env.isProd && !env.demoMode) notFound();
-  const rows = await db.select().from(emailOutbox).orderBy(desc(emailOutbox.createdAt)).limit(40);
+  const q = db.select().from(emailOutbox);
+  const rows = await (to ? q.where(eq(emailOutbox.toEmail, to)) : q).orderBy(desc(emailOutbox.createdAt)).limit(40);
   const linkify = (s: string) => s.split(/(https?:\/\/\S+)/g).map((p, i) => (/^https?:/.test(p) ? <a key={i} href={p}>{p}</a> : p));
   return (
     <PublicShell>
       <div className="space-y-4">
         <h1>Posta simulata</h1>
-        <Notice tone="blue">Solo sviluppo. In produzione le email passano da un provider transazionale con server in UE.</Notice>
+        <Notice tone="blue">Versione di prova: qui compaiono le email che il sito invierebbe. In produzione partiranno da un provider di posta.{to ? <> Stai vedendo solo quelle per <strong>{to}</strong>. <Link href="/dev/mailbox">Mostra tutte</Link>.</> : null}</Notice>
+        {rows.length === 0 && <Notice>Nessuna email{to ? ` per ${to}` : ""} per ora. Se hai appena fatto la registrazione, ricarica la pagina.</Notice>}
         {rows.map((m) => (
           <Card key={m.id}>
             <p className="text-xs text-ink-500">

@@ -7,10 +7,9 @@ import { homeFor } from "@/lib/permissions";
 
 export const metadata = { title: "Specialisti per la tua famiglia, online" };
 
-// Allegato A §1: 49 € seduta individuale, 59 € coppia; colloquio gratuito di 20 minuti. Gli altri prezzi stanno nel profilo di ogni specialista (U-07).
+// Il prezzo dipende dal percorso e dallo specialista (U-07): in home si dice solo "a partire da".
 const PRICES: { id: string; name: string; blurb: string; first: string; firstMin: string; next: string; nextMin: string }[] = [
-  { id: "individuale", name: "Seduta individuale", blurb: "Un percorso con lo specialista che scegli tra le proposte.", first: "Gratis", firstMin: "20 minuti", next: "49 €", nextMin: "a seduta" },
-  { id: "coppia", name: "Seduta di coppia", blurb: "Per affrontare insieme temi di coppia e co-genitorialità.", first: "Gratis", firstMin: "20 minuti", next: "59 €", nextMin: "a seduta" },
+  { id: "percorsi", name: "Il costo del tuo percorso", blurb: "Il prezzo di ogni seduta dipende dal percorso scelto e dallo specialista: lo vedi nel suo profilo prima di prenotare.", first: "Gratis", firstMin: "20 minuti", next: "da 49 €", nextMin: "a partire da, in base al percorso scelto" },
 ];
 
 const FAQS: [string, string][] = [
@@ -97,6 +96,15 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* AREE DI INTERVENTO */}
+      <section className="bg-blush-100">
+        <div className="mx-auto max-w-6xl space-y-4 px-4 py-14 text-center">
+          <h2 className="text-3xl font-bold">Ogni genitore ha la sua storia. Noi ci siamo.</h2>
+          <p className="mx-auto max-w-2xl text-ink-700">Notti senza sonno, allattamento, svezzamento, capricci, rientro al lavoro, senso di colpa: costruiamo insieme il percorso adatto a ciò che stai vivendo con tuo figlio.</p>
+          <LinkButton href="/aree" variant="secondary">Scopri le aree di intervento</LinkButton>
+        </div>
+      </section>
+
       {/* PREZZI */}
       <section id="prezzi" className="mx-auto max-w-6xl scroll-mt-20 px-4 pb-16">
         <h2 className="mb-6 text-3xl font-bold">Quanto costa</h2>
@@ -113,14 +121,13 @@ export default async function Home() {
                   <div><p className="font-semibold">Primo colloquio</p><p className="text-sm text-ink-500">⏱ {p.firstMin}</p></div>
                   <p className="text-3xl font-bold text-night-700">{p.first}</p>
                   <div><p className="font-semibold">Sedute successive</p><p className="text-sm text-ink-500">⏱ {p.nextMin}</p></div>
-                  <p className="text-5xl font-bold text-night-900">{p.next}</p>
+                  <p className="text-4xl font-bold text-night-900">{p.next}</p>
                 </div>
                 <div className="flex items-center gap-5"><LinkButton href={cta}>Inizia dal questionario</LinkButton></div>
               </div>
-              <PhoneMockup couple={idx !== 0} />
+              <PhoneMockup />
             </div>
           ))}
-          <p className="text-sm text-ink-500">Per le altre specialità (logopedia, consulenza del sonno e altre) durata e prezzo sono indicati nel profilo di ogni specialista.</p>
         </div>
       </section>
 

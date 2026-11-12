@@ -16,7 +16,7 @@ export default async function SentPage({ searchParams }: { searchParams: Promise
         </Card>
         {(!env.isProd || env.demoMode) && (
           <Notice tone="blue">
-            Ambiente di sviluppo: le email non vengono inviate davvero. Aprile qui: <Link href="/dev/mailbox">posta simulata</Link>.
+            Versione di prova: le email non vengono inviate davvero. Apri la <Link href={`/dev/mailbox?to=${encodeURIComponent(str(sp.email) ?? "")}`}>posta simulata</Link>, trovi il messaggio «Conferma la tua email» e clicca il link che contiene.
           </Notice>
         )}
       </div>

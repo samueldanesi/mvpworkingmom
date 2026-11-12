@@ -52,7 +52,7 @@ export async function calendarAction(fd: FormData) {
 
 export async function goToJoinAction(fd: FormData) {
   const code = field(fd, "code").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  redirect(code ? `/join/${code}` : "/join");
+  redirect(code ? `/join/verifica/${code}` : "/join");
 }
 
 /** U-16: diario. */

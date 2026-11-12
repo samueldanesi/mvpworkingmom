@@ -1,3 +1,4 @@
+import { CookieBanner } from "@/components/CookieBanner";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
@@ -17,7 +18,7 @@ export const viewport: Viewport = { themeColor: "#5b4b8a", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it" className={figtree.variable}>
-      <body>{children}<ServiceWorker /></body>
+      <body>{children}<ServiceWorker /><CookieBanner /></body>
     </html>
   );
 }

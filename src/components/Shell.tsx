@@ -3,6 +3,7 @@ import { and, count, eq, isNull } from "drizzle-orm";
 import { db, notifications } from "@/db";
 import { logoutAction } from "@/app/actions/auth";
 import type { SessionUser } from "@/lib/auth";
+import { CookiePrefsLink } from "./CookieBanner";
 import { Logo } from "./ui";
 
 export type NavItem = { href: string; label: string };
@@ -99,6 +100,7 @@ export function PublicShell({ children, bare }: { children: React.ReactNode; bar
             </Dropdown>
             <Dropdown label="Come funziona">
               <Link href="/#come-funziona" className={ddItem}>Il percorso in 3 passi</Link>
+              <Link href="/aree" className={ddItem}>Aree di supporto</Link>
               <Link href="/#prezzi" className={ddItem}>Quanto costa</Link>
               <Link href="/faq" className={ddItem}>Domande frequenti</Link>
             </Dropdown>
@@ -123,9 +125,9 @@ export function PublicShell({ children, bare }: { children: React.ReactNode; bar
             <p className="text-sm text-white/60">Specialisti per la genitorialità, per le persone e per le aziende.</p>
           </div>
           {[
-            ["Servizi", [["Trova uno specialista", "/register"], ["Quanto costa", "/#prezzi"], ["Domande frequenti", "/faq"]]],
+            ["Servizi", [["Trova uno specialista", "/register"], ["Aree di supporto", "/aree"], ["Quanto costa", "/#prezzi"], ["Domande frequenti", "/faq"]]],
             ["Aziende e professionisti", [["Canale aziende", "/aziende"], ["Ho un codice aziendale", "/join"], ["Sei uno specialista? Candidati", "/specialists/apply"]]],
-            ["Informazioni", [["Privacy", "/privacy"], ["Termini", "/terms"], ["Emergenze: chiama il 112", "/emergency"]]],
+            ["Informazioni", [["Privacy policy", "/privacy"], ["Cookie policy", "/cookie"], ["Termini", "/terms"], ["Emergenze: chiama il 112", "/emergency"]]],
           ].map(([t, links]) => (
             <div key={t as string} className="space-y-2 text-sm">
               <p className="font-semibold text-white">{t as string}</p>
@@ -133,7 +135,7 @@ export function PublicShell({ children, bare }: { children: React.ReactNode; bar
             </div>
           ))}
         </div>
-        <p className="mx-auto max-w-6xl px-4 pb-8 text-xs text-white/40">Working Mom S.r.l. Società Benefit · Il servizio non è adatto alle emergenze: in caso di pericolo chiama il 112.</p>
+        <p className="mx-auto max-w-6xl px-4 pb-8 text-xs text-white/40">Working Mom S.r.l. Società Benefit · Il servizio non è adatto alle emergenze: in caso di pericolo chiama il 112. · <CookiePrefsLink className="underline hover:text-white/70">Preferenze cookie</CookiePrefsLink></p>
       </footer>
     </div>
   );

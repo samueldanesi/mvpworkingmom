@@ -23,7 +23,7 @@ export default function Business() {
       </section>
       <section className="mx-auto max-w-3xl space-y-3 px-4 py-14 text-ink-700">
         <h2 className="text-2xl font-bold">Perché conviene</h2>
-        <p>Le imprese certificate UNI/PdR 125:2022 accedono a un esonero contributivo fino all&apos;1% (massimo 50.000 € l&apos;anno) e a un contributo fino a 12.000 € sui costi della prima certificazione. La certificazione la rilascia un ente accreditato: Working Mom fornisce le evidenze misurabili. <Link href="/faq">Domande frequenti</Link></p>
+        <p>Le imprese certificate UNI/PdR 102:2026 accedono a un esonero contributivo fino all&apos;1% (massimo 50.000 € l&apos;anno) e a un contributo fino a 12.000 € sui costi della prima certificazione. La certificazione la rilascia un ente accreditato: Working Mom fornisce le evidenze misurabili. <Link href="/faq">Domande frequenti</Link></p>
       </section>
     </PublicShell>
   );

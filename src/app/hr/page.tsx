@@ -26,7 +26,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
       <PageHeader title={`Programma ${co.name}`} subtitle="Dati aggregati e anonimi. L'azienda non vede mai chi usa il servizio né per cosa." actions={<LinkButton href="/hr/reports" variant="secondary">Report</LinkButton>} />
       <Sp sp={sp} />
       <Notice tone="blue">
-        <strong>Perché conviene.</strong> Le imprese certificate UNI/PdR 125:2022 accedono a un esonero contributivo fino all&apos;1% (massimo 50.000 € l&apos;anno, D.L. 62/2026) e a un contributo fino a 12.000 € sui costi della prima certificazione (UNI/PdR 192:2026 in vigore dal 14 aprile 2026). Questi indicatori forniscono le evidenze misurabili: la certificazione la rilascia un ente accreditato.
+        <strong>Perché conviene.</strong> Le imprese certificate UNI/PdR 102:2026 accedono a un esonero contributivo fino all&apos;1% (massimo 50.000 € l&apos;anno, D.L. 62/2026) e a un contributo fino a 12.000 € sui costi della prima certificazione (UNI/PdR 192:2026 in vigore dal 14 aprile 2026). Questi indicatori forniscono le evidenze misurabili: la certificazione la rilascia un ente accreditato.
       </Notice>
       <Card className="my-5">
         <form className="grid gap-3 sm:grid-cols-5" method="get">

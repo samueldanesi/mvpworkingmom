@@ -38,7 +38,7 @@ export async function validateCode(codeRaw: string, email: string) {
 
   const domain = email.split("@")[1]?.toLowerCase() ?? "";
   if (co.allowedDomains.length && !co.allowedDomains.includes(domain) && !co.allowPersonalEmail) {
-    throw new CodeError("Per usare questo codice serve l'email aziendale.");
+    throw new CodeError(`Per usare questo codice serve l'email aziendale (${co.allowedDomains.map((d) => "@" + d).join(", ")}).`);
   }
   if (co.coveredEmployees > 0) {
     const [{ n }] = await db
@@ -135,4 +135,13 @@ export async function createFamilyInvite(employeeId: string) {
   const code = "FAM-" + readableCode(6);
   await db.insert(familyInvites).values({ code, employeeId, companyId: co.id });
   return code;
+}
+
+/** Anteprima di un codice (pagina /join): controlla validità e mostra cosa copre, senza conoscere ancora l'email. */
+export async function peekCode(codeRaw: string) {
+  const code = codeRaw.trim().toUpperCase();
+  const [c] = await db.select().from(accessCodes).where(eq(accessCodes.code, code)).limit(1);
+  const [co] = c ? await db.select().from(companies).where(eq(companies.id, c.companyId)).limit(1) : [];
+  const v = await validateCode(code, `x@${co?.allowedDomains[0] ?? "example.com"}`);
+  return { company: v.company, family: v.kind === "family" };
 }
