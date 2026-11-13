@@ -7,7 +7,8 @@ export function SpecialistCard({ s, tz, reasons, highlight, rel }: { s: PublicSp
   return (
     <Card className={highlight ? "border-brand-200" : ""}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+        {s.profile.photoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={`/api/specialist-photo/${s.id}?k=${s.profile.photoUrl.slice(0, 8)}`} alt="" className="h-16 w-16 rounded-full object-cover" />}
+        <div className="flex-1 space-y-1">
           <h3>{s.name}</h3>
           <p className="text-sm text-ink-500">{s.profile.title}</p>
           <div className="flex flex-wrap gap-1.5 pt-1">

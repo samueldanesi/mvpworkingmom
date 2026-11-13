@@ -1,10 +1,12 @@
 import { skipCheckinAction } from "@/app/actions/onboarding";
 import { CheckinForm } from "@/components/CheckinForm";
 import { Card } from "@/components/ui";
+import { requireUser } from "@/lib/auth";
 
 export const metadata = { title: "Check-in iniziale" };
 
-export default function OnboardingCheckin() {
+export default async function OnboardingCheckin() {
+  const u = await requireUser({ roles: ["user"] });
   return (
     <div className="space-y-4">
       <Card className="space-y-2">
@@ -16,7 +18,7 @@ export default function OnboardingCheckin() {
           <button className="text-sm underline">Salta per ora</button>
         </form>
       </Card>
-      <CheckinForm moment="T0" next="/onboarding/checkin" />
+      <CheckinForm moment="T0" next="/onboarding/checkin" company={!!u.companyId} />
     </div>
   );
 }

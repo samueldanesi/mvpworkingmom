@@ -53,7 +53,7 @@ async function newUser(domain = "test.it") {
 async function onboard(userId: string, over: Record<string, unknown> = {}) {
   const { db, consents } = m.db;
   await db.insert(consents).values([{ userId, kind: "health_data", version: "t" }, { userId, kind: "aggregate_use", version: "t" }]);
-  const steps: Record<string, unknown>[] = [{ area: "sonno", notes: "" }, { childrenCount: 1, childAgeGroups: ["3-5"] }, { language: "it", gender: "any", times: [] }, { previousTherapy: "no" }, { risk1: "no", risk2: "no", ...over }];
+  const steps: Record<string, unknown>[] = [{ path: "me" }, { stage: "3-6", childrenCount: 1, childAgeGroups: ["3-5"] }, { situations: ["sonno"], area: "sonno", notes: "" }, { language: "it", gender: "any", times: [] }, { previousTherapy: "no" }, { risk1: "no", risk2: "no", ...over }];
   let last = { safety: false, completed: false };
   for (let i = 0; i < steps.length; i++) last = await m.intake.saveIntakeStep(userId, i, steps[i]);
   return last;
@@ -341,6 +341,23 @@ describe("Scenario 8 — report HR sotto soglia", () => {
       expect(k.value).toBeNull();
       expect(k.breakdown).toBeUndefined();
     }
+  });
+  it("survey A/C e indagine aziendale E: dati sopra soglia per Acme, nascosti per Beta", async () => {
+    const { db, companies } = m.db;
+    const { impactSurveys } = await import("../kpiSurveys");
+    const { surveyResults, k14 } = await import("../surveys");
+    const [acme] = await db.select().from(companies).where(eq(companies.slug, "acme"));
+    const [beta] = await db.select().from(companies).where(eq(companies.slug, "beta"));
+    const a = await impactSurveys(acme.id);
+    expect(a.baseline.suppressed).toBe(false);
+    expect(a.baseline.lines.length).toBeGreaterThan(5);
+    const b = await impactSurveys(beta.id);
+    expect(b.baseline.suppressed).toBe(true);
+    expect(b.baseline.lines).toHaveLength(0);
+    const res = await surveyResults(acme.id);
+    expect(res[0].questions.length).toBe(11);
+    expect((await k14(acme.id)).value).not.toBeNull();
+    expect((await surveyResults(beta.id))).toHaveLength(0);
   });
   it("anche un filtro che restringe il gruppo sotto N nasconde tutto", async () => {
     const { db, companies } = m.db;

@@ -19,6 +19,7 @@ export default async function SpecialistProfile({ params }: { params: Promise<{ 
       <PageHeader title={s.name} subtitle={p.title ?? undefined} />
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="space-y-4 md:col-span-2">
+          {p.photoUrl && /* eslint-disable-next-line @next/next/no-img-element */ <img src={`/api/specialist-photo/${s.id}?k=${p.photoUrl.slice(0, 8)}`} alt={s.name} className="h-28 w-28 rounded-full object-cover" />}
           <div className="flex flex-wrap gap-1.5">
             {p.specializations.map((x) => <Badge key={x} tone="brand">{SPECIALTIES[x] ?? x}</Badge>)}
             {p.languages.map((l) => <Badge key={l}>{LANGUAGES[l] ?? l}</Badge>)}

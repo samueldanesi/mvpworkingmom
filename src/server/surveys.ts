@@ -3,13 +3,9 @@ import { and, desc, eq } from "drizzle-orm";
 import { companySurveys, companies, db, responses } from "@/db";
 import { getRules } from "./settings";
 
-/** B-10 / K-14: indagine aziendale anonima a tutti i dipendenti. Nessun legame con persone: pseudonimo casuale per risposta. */
-export const SURVEY_ITEMS = [
-  { key: "support", label: "La mia azienda mi supporta come genitore o caregiver." },
-  { key: "balance", label: "Riesco a conciliare lavoro e famiglia." },
-  { key: "culture", label: "In azienda si può parlare apertamente di genitorialità e cura." },
-] as const;
+import { K14_QUESTION, SURVEY_E, parseSurvey, valuesOf } from "@/lib/survey-library";
 
+/** B-10 / K-14: indagine aziendale anonima a tutti i dipendenti (survey E della libreria). Nessun legame con persone: pseudonimo casuale per risposta. */
 export async function createSurvey(companyId: string, title: string) {
   const prev = await db.select().from(companySurveys).where(eq(companySurveys.companyId, companyId));
   const [s] = await db
@@ -28,24 +24,36 @@ export async function getSurveyByToken(token: string) {
   return s ?? null;
 }
 
-export async function submitSurvey(surveyId: string, items: Record<string, number>) {
-  const clean: Record<string, number> = {};
-  for (const it of SURVEY_ITEMS) {
-    const v = Math.round(items[it.key]);
-    if (!(v >= 1 && v <= 5)) throw new Error("Rispondi a tutte le domande.");
-    clean[it.key] = v;
-  }
+export async function submitSurvey(surveyId: string, fd: FormData) {
+  const clean = parseSurvey(SURVEY_E, (n) => fd.getAll(n).map(String));
   await db.insert(responses).values({
     pseudonym: `sv_${randomBytes(8).toString("hex")}`, // casuale e usa e getta: non ricollegabile a nessuno
     instrument: "company_survey",
-    version: "1",
+    version: SURVEY_E.version,
     moment: surveyId,
-    score: clean.support,
+    score: clean[K14_QUESTION] > 0 ? clean[K14_QUESTION] : null,
     items: clean,
   });
 }
 
-export type SurveyResult = { id: string; title: string; round: number; status: string; token: string; createdAt: Date; n: number; suppressed: boolean; agree: Record<string, number | null> };
+/** Sintesi di una domanda: scala = media e % 4-5; scelta singola = % per risposta; multipla = % che ha scelto ogni opzione. */
+export type QuestionSummary = { id: string; text: string; kind: "scale" | "single" | "multi"; n: number; mean?: number; top?: number; shares?: { label: string; pct: number }[] };
+export function summarize(rows: Record<string, number>[]): QuestionSummary[] {
+  return SURVEY_E.questions.map((q) => {
+    if (q.kind === "scale") {
+      const v = valuesOf(rows, q.id);
+      return { id: q.id, text: q.text, kind: q.kind, n: v.length, mean: v.length ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10 : undefined, top: v.length ? Math.round((v.filter((x) => x >= 4).length / v.length) * 100) : undefined };
+    }
+    if (q.kind === "single") {
+      const v = valuesOf(rows, q.id);
+      return { id: q.id, text: q.text, kind: q.kind, n: v.length, shares: q.options!.map((label, i) => ({ label, pct: v.length ? Math.round((v.filter((x) => x === i + 1).length / v.length) * 100) : 0 })) };
+    }
+    const answered = rows.filter((r) => q.options!.some((_, i) => r[`${q.id}.${i + 1}`] === 1));
+    return { id: q.id, text: q.text, kind: q.kind, n: answered.length, shares: q.options!.map((label, i) => ({ label, pct: answered.length ? Math.round((answered.filter((r) => r[`${q.id}.${i + 1}`] === 1).length / answered.length) * 100) : 0 })) };
+  });
+}
+
+export type SurveyResult = { id: string; title: string; round: number; status: string; token: string; createdAt: Date; n: number; suppressed: boolean; questions: QuestionSummary[]; k14: number | null };
 
 /** Risultati aggregati con soglia minima (D-05): sotto soglia non si mostra nulla. */
 export async function surveyResults(companyId: string): Promise<SurveyResult[]> {
@@ -55,9 +63,9 @@ export async function surveyResults(companyId: string): Promise<SurveyResult[]> 
   for (const s of list) {
     const rs = await db.select().from(responses).where(and(eq(responses.instrument, "company_survey"), eq(responses.moment, s.id)));
     const suppressed = rs.length < kMin;
-    const agree: Record<string, number | null> = {};
-    for (const it of SURVEY_ITEMS) agree[it.key] = suppressed || !rs.length ? null : Math.round((rs.filter((r) => (r.items[it.key] ?? 0) >= 4).length / rs.length) * 100);
-    out.push({ id: s.id, title: s.title, round: s.round, status: s.status, token: s.token, createdAt: s.createdAt, n: rs.length, suppressed, agree });
+    const questions = suppressed ? [] : summarize(rs.map((r) => r.items));
+    const k = questions.find((q) => q.id === K14_QUESTION)?.top ?? null;
+    out.push({ id: s.id, title: s.title, round: s.round, status: s.status, token: s.token, createdAt: s.createdAt, n: rs.length, suppressed, questions, k14: suppressed ? null : k });
   }
   return out;
 }
@@ -68,7 +76,7 @@ export async function k14(companyId: string) {
   const res = (await surveyResults(companyId)).filter((r) => r.n > 0).sort((a, b) => b.round - a.round);
   const [last, prev] = res;
   if (!last || last.suppressed) return { value: null, n: last?.n ?? 0, suppressed: true, note: last ? `Meno di ${kMin} risposte: dato non mostrato.` : "Nessuna indagine ancora lanciata (B-10)." };
-  const v = last.agree.support;
-  const delta = prev && !prev.suppressed && prev.agree.support !== null && v !== null ? v - (prev.agree.support as number) : null;
+  const v = last.k14;
+  const delta = prev && !prev.suppressed && prev.k14 !== null && v !== null ? v - prev.k14 : null;
   return { value: v, n: last.n, suppressed: false, note: delta === null ? `Rilevazione ${last.round}: «${last.title}».` : `Rilevazione ${last.round} vs ${prev.round}: ${delta >= 0 ? "+" : ""}${delta} punti percentuali.` };
 }

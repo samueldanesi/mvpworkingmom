@@ -6,7 +6,7 @@ import { getProfile } from "@/server/specialist";
 
 export const metadata = { title: "Profilo pubblico" };
 
-type Pending = Partial<{ title: string; bio: string; approach: string; specializations: string[]; languages: string[]; gender: string | null; ageGroups: string[]; responseHours: string; sessionMinutes: number; priceCents: number; weeklyCapacity: number }>;
+type Pending = Partial<{ title: string; bio: string; approach: string; specializations: string[]; languages: string[]; gender: string | null; ageGroups: string[]; responseHours: string; sessionMinutes: number; priceCents: number; weeklyCapacity: number; photoUrl: string }>;
 
 /** S-03: ogni modifica passa da approvazione prima di essere pubblicata. */
 export default async function Profile({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -21,6 +21,10 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
       <Notice tone="blue">Le modifiche vengono pubblicate solo dopo l&apos;approvazione del responsabile clinico.</Notice>
       <form action={submitProfileAction} className="mt-4 space-y-4">
         <Card className="space-y-4">
+          <div className="flex items-center gap-4">
+            {p.photoUrl ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={`/api/specialist-photo/${u.id}?k=${p.photoUrl.slice(0, 8)}`} alt="La tua foto" className="h-20 w-20 rounded-full object-cover" /> : <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-50 text-xs text-ink-500">Nessuna foto</div>}
+            <Field label="Foto del profilo" hint="JPG, PNG o WebP, fino a 2 MB. Viene pubblicata dopo l'approvazione."><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" /></Field>
+          </div>
           <Field label="Titolo"><input name="title" defaultValue={p.title ?? ""} required /></Field>
           <Field label="Approccio" hint="Come lavori, in poche righe."><textarea name="approach" rows={4} defaultValue={p.approach ?? ""} required /></Field>
           <Field label="Chi sono"><textarea name="bio" rows={4} defaultValue={p.bio ?? ""} /></Field>

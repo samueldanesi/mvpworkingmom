@@ -9,6 +9,8 @@ import { rank, type Candidate } from "../matching";
 import { detectAlarm } from "../safety";
 import { scoreQuestionnaire, QUESTIONNAIRES } from "../questionnaires";
 import { buildIcs } from "../ics";
+import { situationSpecialties } from "../constants";
+import { parseSurvey, SURVEY_A, SURVEY_E } from "../survey-library";
 
 describe("cifratura (P-05)", () => {
   it("round trip e cifratura non deterministica", () => {
@@ -176,5 +178,32 @@ describe("questionari e calendario", () => {
     expect(ics).toContain("BEGIN:VEVENT");
     expect(ics).toContain("DTSTART:20261110T090000Z");
     expect(ics).toContain("SUMMARY:Seduta\; test");
+  });
+});
+
+describe("questionario d'ingresso e survey della Committente", () => {
+  it("le situazioni scelte danno le specializzazioni giuste (regole di abbinamento)", () => {
+    expect(situationSpecialties(["parto_difficile"])).toEqual(["perinatale"]);
+    expect(situationSpecialties(["allattamento"])).toEqual(expect.arrayContaining(["allattamento", "ostetrica"]));
+    expect(situationSpecialties(["linguaggio", "sonno"])).toEqual(expect.arrayContaining(["logopedia", "sonno"]));
+    expect(situationSpecialties([])).toEqual([]);
+  });
+  it("il matching usa le specializzazioni delle situazioni", () => {
+    const mk = (id: string, sp: string[]): Candidate => ({ userId: id, specializations: sp, languages: ["it"], gender: "f", ageGroups: ["0-2"], nextSlot: new Date(Date.now() + 86_400_000), weeklyCapacityLeft: 5 });
+    const r = rank([mk("x", ["psicologia"]), mk("ibclc", ["allattamento"])], { area: "perinatale", wantedSpecialties: situationSpecialties(["allattamento"]), language: "it", gender: "any", childAgeGroups: [], coveredSpecialties: [] });
+    expect(r[0].candidate.userId).toBe("ibclc");
+  });
+  it("survey A: accetta «preferisco non rispondere» solo dove previsto e rifiuta risposte mancanti", () => {
+    const base: Record<string, string[]> = { "kpi_a.A1": ["3"], "kpi_a.A2": ["2"], "kpi_a.A3": ["0"], "kpi_a.A4": ["1"], "kpi_a.A5": ["4"], "kpi_a.A6": ["1"], "kpi_a.A7": ["5"], "kpi_a.A9": ["0"], "kpi_a.A10": ["2"] };
+    const ok = parseSurvey(SURVEY_A, (n) => base[n] ?? []);
+    expect(ok.A3).toBe(0);
+    expect(ok.A1).toBe(3);
+    expect(() => parseSurvey(SURVEY_A, (n) => (n === "kpi_a.A1" ? [] : base[n] ?? []))).toThrow();
+    expect(() => parseSurvey(SURVEY_A, (n) => (n === "kpi_a.A2" ? ["9"] : base[n] ?? []))).toThrow();
+  });
+  it("survey E: scelta multipla con massimo 3 risposte (E9)", () => {
+    const base: Record<string, string[]> = { "company_survey.E1": ["1"], "company_survey.E2": ["3"], "company_survey.E3": ["4"], "company_survey.E4": ["4"], "company_survey.E5": ["5"], "company_survey.E6": ["1", "2"], "company_survey.E7": ["1"], "company_survey.E8": ["3"], "company_survey.E9": ["1", "2", "3"], "company_survey.E10": ["2"], "company_survey.E11": ["0"] };
+    expect(parseSurvey(SURVEY_E, (n) => base[n] ?? [])["E9.3"]).toBe(1);
+    expect(() => parseSurvey(SURVEY_E, (n) => (n === "company_survey.E9" ? ["1", "2", "3", "4"] : base[n] ?? []))).toThrow();
   });
 });

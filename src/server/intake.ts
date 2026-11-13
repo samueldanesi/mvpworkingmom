@@ -6,6 +6,9 @@ import { detectAlarm } from "@/lib/safety";
 
 /** U-04: questionario d'ingresso a schermate brevi con salvataggio parziale. I dati sono cifrati (P-05). */
 export type IntakeData = {
+  path?: "me" | "bambino" | "famiglia";
+  stage?: string;
+  situations?: string[];
   area?: string;
   notes?: string;
   childrenCount?: number;
@@ -18,7 +21,7 @@ export type IntakeData = {
   risk2?: "yes" | "no";
 };
 
-export const INTAKE_STEPS = 5;
+export const INTAKE_STEPS = 6;
 
 export async function getIntake(userId: string): Promise<{ data: IntakeData; step: number; completed: boolean; safetyFlag: boolean }> {
   const [row] = await db.select().from(intakeProfiles).where(eq(intakeProfiles.userId, userId)).limit(1);

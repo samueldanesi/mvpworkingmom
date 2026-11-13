@@ -126,8 +126,8 @@ async function main() {
     { userId: anna.id, kind: "health_data", version: DOC_VERSIONS.health_data }, { userId: anna.id, kind: "aggregate_use", version: DOC_VERSIONS.aggregate_use },
   ]);
   await db.insert(intakeProfiles).values({
-    userId: anna.id, step: 5, completedAt: now,
-    dataEnc: encryptJson({ area: "carico_mentale", childrenCount: 2, childAgeGroups: ["3-5"], language: "it", gender: "any", times: ["sera"], previousTherapy: "no", risk1: "no", risk2: "no" }),
+    userId: anna.id, step: 6, completedAt: now,
+    dataEnc: encryptJson({ path: "me", stage: "3-6", situations: ["carico_mentale", "identita"], area: "carico_mentale", childrenCount: 2, childAgeGroups: ["3-5"], language: "it", gender: "any", times: ["sera"], previousTherapy: "no", risk1: "no", risk2: "no" }),
   });
   await db.insert(users).values({ email: "privato@test.it", fullName: "Paola Privata", passwordHash: hash, emailVerifiedAt: verified, onboardingPath: "private", gender: "f", birthYear: 1990 });
 
@@ -172,6 +172,12 @@ async function main() {
         const sessions = 1 + Math.floor(rnd() * 4);
         for (let s = 0; s < sessions; s++) evRows.push({ pseudonym: p, type: "session_done", occurredAt: reg.plus({ days: 8 + s * 7 }).toJSDate(), meta: {} });
         respRows.push(resp(p, "who5", "T0", 2, 0, reg.toJSDate()), resp(p, "mental_load", "T0", 4, 0, reg.toJSDate()), resp(p, "care_load", "T0", 3.5, 0, reg.toJSDate()));
+        if (tag === "acme") {
+          const q = (x: number) => Math.min(5, Math.max(1, Math.round(x + (rnd() - 0.5) * 1.6)));
+          const aIt = { A1: q(4), A2: q(3), A3: q(2.3), A4: 1 + Math.floor(rnd() * 4), A5: q(2.6), A6: 1 + Math.floor(rnd() * 3), A7: q(3), A9: 1, A10: 2 };
+          respRows.push({ pseudonym: p, instrument: "kpi_a", version: "A-1.0", moment: "T0", score: null, items: aIt, answeredAt: reg.toJSDate() });
+          if (sessions >= 3) respRows.push({ pseudonym: p, instrument: "kpi_c", version: "C-1.0", moment: "T2", score: null, items: { C1: q(aIt.A1 - 1.2), C2: q(aIt.A2 - 1), C3: q(aIt.A3 + 1), C4: q(aIt.A5 + 0.8), C5: q(aIt.A7 + 0.6), C6: Math.max(1, aIt.A6 - 1), C7: q(3.8), [`C8.${1 + Math.floor(rnd() * 5)}`]: 1, C9: 1 + Math.floor(rnd() * 3) }, answeredAt: reg.plus({ days: 90 }).toJSDate() });
+        }
         if (sessions >= 2) {
           const t1 = reg.plus({ days: 30 }).toJSDate();
           respRows.push(resp(p, "who5", "T1", 3, 0, t1), resp(p, "mental_load", "T1", 3, 0, t1), resp(p, "care_load", "T1", 2.8, 0, t1), resp(p, "satisfaction", "T1", 4.3, 0, t1));
@@ -199,8 +205,11 @@ async function main() {
     const [sv] = await db.insert(companySurveys).values({ companyId: acme.id, title: `Indagine genitorialità e cura — rilevazione ${round}`, token: `demo-acme-r${round}`, round, status: round === 1 ? "closed" : "open", createdAt: DateTime.now().minus({ days: round === 1 ? 90 : 10 }).toJSDate() }).returning();
     const rows = Array.from({ length: n }, (_, i) => {
       const pick = (off: number) => Math.min(5, Math.max(1, Math.round(1 + ((i * 7 + off) % 5) * 0.5 + base * 3)));
-      const items = { support: pick(0), balance: pick(1), culture: pick(2) };
-      return { pseudonym: `sv_demo_${round}_${i}`, instrument: "company_survey", version: "1", moment: sv.id, score: items.support, items };
+      const items: Record<string, number> = { E1: 1 + (i % 4), E2: pick(0), E3: pick(1), E4: pick(2), E5: pick(3), E8: pick(4), E10: 1 + (i % 3), E11: 1 + (i % 5) };
+      items[`E6.${1 + (i % 4)}`] = 1; items[`E6.${1 + ((i + 1) % 4)}`] = 1;
+      items[`E7.${1 + (i % 4)}`] = 1;
+      items[`E9.${1 + (i % 8)}`] = 1; items[`E9.${1 + ((i + 3) % 8)}`] = 1;
+      return { pseudonym: `sv_demo_${round}_${i}`, instrument: "company_survey", version: "E-1.0", moment: sv.id, score: items.E5, items };
     });
     await db.insert(responses).values(rows);
   }

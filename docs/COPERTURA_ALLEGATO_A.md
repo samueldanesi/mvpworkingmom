@@ -35,10 +35,10 @@ Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/t
 | U-01 | ✅ | Email+password, verifica email, recupero, blocco dopo 5 tentativi. Scelta "Per me / codice" subito dopo. |
 | U-02 | ✅ | Codice o riconoscimento del dominio; validità, scadenza, revoca, posti residui, copertura mostrata. |
 | U-03 | ✅ | Consenso salute separato da quello per i report aggregati; revocabili in Impostazioni. Testi legali segnaposto (P-13). |
-| U-04 | ✅ | 5 schermate con salvataggio parziale; dati cifrati. |
+| U-04 | ✅ | 6 schermate con salvataggio parziale; dati cifrati. Testi e regole di abbinamento forniti dalla Committente (percorso, momento di vita, 20 situazioni, abbinamento alle specializzazioni, terza persona per «per il mio bambino»). |
 | U-05 | 🟡 | Risposte e parole di allarme → numeri di emergenza + blocco prenotazione fino a sblocco del resp. clinico. **La lista di parole va rivista con il responsabile clinico.** |
 | U-06 | ✅ | Pesi configurabili in `src/lib/matching.ts` (non da interfaccia); 3 proposte + elenco con filtri. |
-| U-07 | ✅ | |
+| U-07 | ✅ | Foto del profilo (carica lo specialista, pubblicata dopo approvazione). |
 | U-08 | ✅ | Slot reali, fuso dell'utente, conferma email, .ics, un colloquio gratuito per specialista. |
 | U-09 | 🟡🔌 | Sala d'attesa con test audio/video reale. Stanza **simulata**; adattatore Whereby scritto, non provato con una chiave. |
 | U-10 | ✅ | |
@@ -46,7 +46,7 @@ Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/t
 | U-12 | ✅ | Testo + allegati cifrati, orari di risposta, avviso emergenza. Aggiornamento a polling (8 s), niente push. |
 | U-13 | 🟡🔌 | Crediti prima del personale ✅. Checkout **simulato**; Stripe Checkout/Connect scritto, non provato. Apple/Google Pay passano da Stripe. Buono welfare: non integrato (solo fattura, B-06). |
 | U-14 | 🟡 | Agenda e PDF per seduta ✅. **Non è fattura elettronica SDI** (T-07). |
-| U-15 | 🟡 | T0/T1/T2 ✅. WHO-5 reale; carico mentale/di cura/conflitto sono **bozze** da sostituire (D-04). |
+| U-15 | 🟡 | T0/T1/T2 ✅. WHO-5 reale; carico mentale/di cura/conflitto sono **bozze** da sostituire (D-04). Per chi ha un codice aziendale si aggiungono la survey A (T0) e la survey C (T2, 90 giorni) fornite dalla Committente; l'HR vede medie aggregate e variazione A→C sopra soglia. |
 | U-16 | ✅ | Diario privato con umore e note, cifrato (`/app/diary`). Incluso nell'esportazione e nella cancellazione dei dati. |
 | U-17 | ✅ | Modifica dati, consensi, export JSON, cancellazione account. |
 | U-18 | ✅ | Ticket + FAQ. |
@@ -61,14 +61,14 @@ Legenda: ✅ fatto e collaudato · 🟡 fatto in forma semplificata o con dati/t
 | B-06 | 🟡 | Fattura intestata all'utente ✅; integrazione diretta con piattaforme welfare ⛔ (T-10, dopo). |
 | B-07 | 🟡 | Kit di comunicazione ✅; pagina di lancio dedicata per azienda ⛔ (nell'MVP solo Working Mom). |
 | B-08/B-09 | ✅ | Dashboard con filtri; report PDF e CSV, immutabili e versionati. |
-| B-10 | ⛔ | Indagine aziendale anonima (K-14). |
+| B-10 | ✅ | Indagine aziendale anonima: survey E della Committente (11 domande) tramite link, risultati aggregati sopra soglia. |
 | B-11 | ⛔ | Dopo l'MVP. |
 
 ## Specialista (§5)
 | ID | Stato | Note |
 |---|---|---|
 | S-01/S-02 | ✅ | Candidatura con documenti cifrati, stati, approvazione manuale, accettazione con data e versione. Testo del contratto segnaposto. |
-| S-03 | ✅ | Modifiche in coda di approvazione. |
+| S-03 | ✅ | Modifiche (foto, specializzazioni, ecc.) in coda di approvazione. Le specializzazioni elencano le aree/figure indicate dalla Committente. |
 | S-04 | 🟡 | Disponibilità ricorrenti, eccezioni, slot diversi, fusi ✅. **Sync Google/Outlook ⛔** (solo .ics). |
 | S-05/S-06/S-07 | ✅ | Note cifrate, visibili solo al professionista. |
 | S-08 | 🟡 | Modelli di risposta e link di prenotazione; niente costruttore di proposte ricorrenti. |
@@ -130,3 +130,9 @@ K-01…K-12, K-15 ✅ (K-13 non esiste nel documento); K-14 ⛔. Il collegamento
 ## Collaudo §10.3
 I 12 scenari sono coperti da `npm run test:flows` (service layer, DB reale) e da un giro nel browser sulle parti visibili (registrazione, 2FA, onboarding,
 prenotazione, pagamento simulato, fattura PDF, report HR, permessi). Non ancora eseguiti **in produzione** (richiesto dall'Allegato).
+
+## Survey fornite dalla Committente
+- **Survey A** (baseline) → T0, solo con codice aziendale. **Survey C** (90 giorni) → T2. **Survey E** (annuale, tutto il personale) → B-10 / K-14.
+- K-14 = quota di risposte 4-5 a E5 («Il mio responsabile è disponibile quando ho esigenze familiari»): scelta nostra, da confermare.
+- E6/E7 usano un elenco di misure di base uguale per tutte le aziende (la Committente chiede di personalizzarlo per azienda).
+- **Non incluse perché fuori dall'Allegato A:** survey B (dopo ogni consulenza: l'allegato non prevede questo momento di rilevazione) e survey D (rientro dopo il congedo); il commento libero interno; la matrice completa dei dati per area 192 oltre agli indicatori K-01…K-15.

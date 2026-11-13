@@ -1,10 +1,13 @@
 import { submitCheckinAction } from "@/app/actions/onboarding";
 import { Button, Card, Notice } from "@/components/ui";
 import { env } from "@/lib/env";
+import { SurveyFields } from "@/components/SurveyFields";
 import { CHECKIN_SET, QUESTIONNAIRES } from "@/lib/questionnaires";
+import { SURVEY_A, SURVEY_C } from "@/lib/survey-library";
 
 /** U-15: check-in di benessere (T0/T1/T2). Le domande vengono dalla libreria versionata. */
-export function CheckinForm({ moment, next }: { moment: "T0" | "T1" | "T2"; next: string }) {
+export function CheckinForm({ moment, next, company = false }: { moment: "T0" | "T1" | "T2"; next: string; company?: boolean }) {
+  const kpi = company ? (moment === "T0" ? SURVEY_A : moment === "T2" ? SURVEY_C : null) : null;
   return (
     <form action={submitCheckinAction} className="space-y-5">
       <input type="hidden" name="moment" value={moment} />
@@ -35,6 +38,15 @@ export function CheckinForm({ moment, next }: { moment: "T0" | "T1" | "T2"; next
           </Card>
         );
       })}
+      {kpi && (
+        <Card className="space-y-3">
+          <div>
+            <h2>{kpi.title}</h2>
+            <p className="text-sm text-ink-500">{kpi.intro}</p>
+          </div>
+          <SurveyFields sv={kpi} />
+        </Card>
+      )}
       <Notice tone="blue">Le tue risposte individuali non vengono mai mostrate alla tua azienda: contano solo come dati aggregati e anonimi, se hai dato il consenso.</Notice>
       <Button>Invia</Button>
     </form>

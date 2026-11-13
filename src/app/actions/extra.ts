@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { connectCalendar, disconnectCalendar } from "@/lib/integrations";
 import { done, fail, field, num } from "@/lib/flash";
 import { rateAppointment } from "@/server/ratings";
-import { getSurveyByToken, SURVEY_ITEMS, submitSurvey } from "@/server/surveys";
+import { getSurveyByToken, submitSurvey } from "@/server/surveys";
 
 /** B-10: risposta anonima all'indagine aziendale (nessun login; un cookie evita doppie compilazioni dallo stesso browser). */
 export async function submitSurveyAction(fd: FormData) {
@@ -18,10 +18,8 @@ export async function submitSurveyAction(fd: FormData) {
   if (!s || s.s.status !== "open") fail(`/survey/${token}`, "Indagine non disponibile.");
   const jar = await cookies();
   if (jar.get(`wm_sv_${s!.s.id}`)) redirect(`/survey/${token}?ok=${encodeURIComponent("Hai già risposto: grazie.")}`);
-  const items: Record<string, number> = {};
-  for (const it of SURVEY_ITEMS) items[it.key] = num(fd, it.key) ?? 0;
   try {
-    await submitSurvey(s!.s.id, items);
+    await submitSurvey(s!.s.id, fd);
   } catch (e) {
     fail(`/survey/${token}`, (e as Error).message);
   }

@@ -3,7 +3,7 @@ import { Badge, Button, Card, Empty, Field, Notice, PageHeader, Sp } from "@/com
 import { env } from "@/lib/env";
 import { fmtDate } from "@/lib/format";
 import { requireHr } from "@/lib/hr";
-import { SURVEY_ITEMS, surveyResults } from "@/server/surveys";
+import { surveyResults } from "@/server/surveys";
 
 export const metadata = { title: "Indagine aziendale" };
 
@@ -32,9 +32,18 @@ export default async function Surveys({ searchParams }: { searchParams: Promise<
               </div>
               <p className="text-xs text-ink-500">Lanciata il {fmtDate(s.createdAt)} · Link da condividere: <code>{env.appUrl}/survey/{s.token}</code></p>
               {s.suppressed ? <Notice tone="amber">{s.n} risposte: sotto la soglia di anonimato nessun risultato viene mostrato.</Notice> : (
-                <ul className="text-sm">
-                  {SURVEY_ITEMS.map((it) => <li key={it.key} className="flex justify-between"><span>{it.label}</span><span>{s.agree[it.key]}% d&apos;accordo (n={s.n})</span></li>)}
-                </ul>
+                <div className="space-y-3 text-sm">
+                  {s.questions.map((q) => (
+                    <div key={q.id}>
+                      <p className="font-medium text-ink-800">{q.id} · {q.text}</p>
+                      {q.kind === "scale" ? (
+                        <p className="text-ink-600">{q.n ? `Media ${q.mean} su 5 · ${q.top}% risposte 4-5` : "Nessuna risposta valida"} (n={q.n})</p>
+                      ) : (
+                        <p className="text-ink-600">{q.n ? q.shares!.filter((x) => x.pct > 0).map((x) => `${x.label} ${x.pct}%`).join(" · ") : "Nessuna risposta"} (n={q.n})</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
               {s.status === "open" && <form action={closeSurveyAction}><input type="hidden" name="id" value={s.id} /><button className="text-xs underline">Chiudi l&apos;indagine</button></form>}
             </Card>

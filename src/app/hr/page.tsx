@@ -3,6 +3,7 @@ import { Badge, Button, Card, Field, LinkButton, Notice, PageHeader, Sp, str } f
 import { requireHr } from "@/lib/hr";
 import { NEED_AREAS } from "@/lib/constants";
 import { kpisForCompany } from "@/server/kpi";
+import { impactSurveys } from "@/server/kpiSurveys";
 
 export const metadata = { title: "Dashboard HR" };
 
@@ -17,6 +18,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const site = str(sp.site) || undefined;
   const area = str(sp.area) || undefined;
   const res = await kpisForCompany(co.id, { from, to, site, area });
+  const imp = await impactSurveys(co.id);
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const main = res.kpis.filter((k) => !k.key.startsWith("K-15"));
   const gender = res.kpis.filter((k) => k.key.startsWith("K-15"));
@@ -54,6 +56,17 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             {k.note && <p className="text-xs text-ink-500">{k.note}</p>}
             <p className="text-xs text-ink-400">{k.definition}</p>
             {!k.suppressed && k.n > 0 && !k.breakdown && <p className="text-xs text-ink-500">Numerosità: {k.n}</p>}
+          </Card>
+        ))}
+      </div>
+      <h2 className="mb-2 mt-8">Survey di conciliazione</h2>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {[imp.baseline, imp.impact].map((b) => (
+          <Card key={b.title} className="space-y-2">
+            <div className="flex items-center justify-between"><p className="text-xs font-medium uppercase tracking-wide text-ink-500">{b.title}</p>{b.suppressed && <Badge>Non mostrato</Badge>}</div>
+            {b.suppressed ? <p className="text-sm text-ink-500">Meno di {res.kMin} risposte: per tutelare l&apos;anonimato il dato non viene mostrato (risposte: {b.n}).</p> : (
+              <ul className="space-y-1 text-sm">{b.lines.map((l) => <li key={l.label}><span className="text-ink-600">{l.label}: </span><span className="font-medium text-ink-900">{l.value}</span></li>)}<li className="text-xs text-ink-500">Numerosità: {b.n}</li></ul>
+            )}
           </Card>
         ))}
       </div>

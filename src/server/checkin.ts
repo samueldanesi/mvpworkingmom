@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { appointments, db, events, pseudonymMap, responses } from "@/db";
 import { pseudonymFor, recordResponse, track } from "@/lib/analytics";
 import { CHECKIN_SET, QUESTIONNAIRES, T1_AFTER_SESSIONS, scoreQuestionnaire } from "@/lib/questionnaires";
+import { SURVEY_A, SURVEY_C } from "@/lib/survey-library";
 
 export type Moment = "T0" | "T1" | "T2";
 
@@ -32,7 +33,8 @@ export async function dueCheckins(userId: string): Promise<Moment[]> {
   return due;
 }
 
-export async function submitCheckin(userId: string, moment: Moment, answers: Record<string, Record<string, number>>) {
+/** Survey A (T0) e C (T2) della Committente: solo per chi usa un codice aziendale. */
+export async function submitCheckin(userId: string, moment: Moment, answers: Record<string, Record<string, number>>, kpi?: Record<string, number> | null) {
   for (const key of CHECKIN_SET[moment]) {
     const q = QUESTIONNAIRES[key];
     const a = answers[key] ?? {};
@@ -40,6 +42,8 @@ export async function submitCheckin(userId: string, moment: Moment, answers: Rec
     if (score === null) throw new Error(`Rispondi a tutte le domande (${q.title}).`);
     await recordResponse(userId, { instrument: q.key, version: q.version, moment, score, items: a });
   }
+  const sv = moment === "T0" ? SURVEY_A : moment === "T2" ? SURVEY_C : null;
+  if (sv && kpi) await recordResponse(userId, { instrument: sv.key, version: sv.version, moment, score: null, items: kpi });
   await track(userId, `checkin_${moment}`);
 }
 

@@ -14,6 +14,8 @@ export const DEFAULT_MATCH_CONFIG: MatchConfig = {
 
 export type MatchPrefs = {
   area: string;
+  /** Specializzazioni volute, ricavate dalle situazioni scelte nel questionario; se vuote si usa l'area. */
+  wantedSpecialties?: string[];
   language: string; // es. "it"
   gender: "any" | "f" | "m";
   childAgeGroups: string[];
@@ -37,7 +39,7 @@ export function scoreCandidate(c: Candidate, p: MatchPrefs, cfg: MatchConfig = D
   const w = cfg.weights;
   let score = 0;
   const reasons: string[] = [];
-  const wanted = AREA_TO_SPECIALTIES[p.area] ?? [];
+  const wanted = p.wantedSpecialties?.length ? p.wantedSpecialties : (AREA_TO_SPECIALTIES[p.area] ?? []);
   const areaHit = c.specializations.some((s) => wanted.includes(s));
   if (areaHit) {
     score += w.area;

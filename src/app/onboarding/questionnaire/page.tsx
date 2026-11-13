@@ -1,7 +1,7 @@
 import { saveIntakeAction } from "@/app/actions/onboarding";
 import { Button, Card, Field, Sp, str } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { AGE_GROUPS, LANGUAGES, NEED_AREAS } from "@/lib/constants";
+import { INTAKE_PATHS, INTAKE_STAGES, LANGUAGES, SITUATIONS, SITUATION_GROUPS } from "@/lib/constants";
 import { getIntake, INTAKE_STEPS } from "@/server/intake";
 import { redirect } from "next/navigation";
 
@@ -30,43 +30,64 @@ export default async function Questionnaire({ searchParams }: { searchParams: Pr
         <input type="hidden" name="step" value={step} />
         {step === 0 && (
           <>
-            <h1>Di cosa hai bisogno?</h1>
+            <h1>Quale percorso ti interessa?</h1>
+            <p className="text-sm text-ink-600">Ogni percorso si adatta a te.</p>
             <div className="space-y-2">
-              {Object.entries(NEED_AREAS).map(([k, v]) => (
-                <label key={k} className="flex items-center gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
-                  <input type="radio" name="area" value={k} defaultChecked={d.area === k} required />
-                  {v}
+              {Object.entries(INTAKE_PATHS).map(([k, v]) => (
+                <label key={k} className="flex items-start gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
+                  <input type="radio" name="path" value={k} defaultChecked={d.path === k} required className="mt-1" />
+                  <span><strong>{v.title}.</strong> {v.text}</span>
                 </label>
               ))}
             </div>
-            <Field label="Vuoi aggiungere qualcosa? (facoltativo)" hint="Non scrivere qui situazioni di emergenza: per quelle chiama il 112.">
-              <textarea name="notes" rows={3} maxLength={600} defaultValue={d.notes} />
-            </Field>
           </>
         )}
         {step === 1 && (
           <>
-            <h1>La tua famiglia</h1>
-            <Field label="Quanti figli hai?">
-              <select name="childrenCount" defaultValue={String(d.childrenCount ?? 1)}>
-                {[0, 1, 2, 3, 4, 5].map((n) => (
+            <h1>In che momento sei?</h1>
+            <p className="text-sm text-ink-600">Ti faremo alcune domande su ciò che stai vivendo. Ci aiuteranno a orientarti verso lo specialista più adatto a te.</p>
+            <div className="space-y-2">
+              {Object.entries(INTAKE_STAGES).map(([k, v]) => (
+                <label key={k} className="flex items-center gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
+                  <input type="radio" name="stage" value={k} defaultChecked={d.stage === k} required />
+                  {v.label}
+                </label>
+              ))}
+            </div>
+            <Field label="Quanti figli hai? (se stai aspettando il primo, lascia 1)" hint="Indichiamo solo la fascia d'età, mai nomi o dati dei bambini.">
+              <select name="childrenCount" defaultValue={String(Math.max(1, d.childrenCount ?? 1))}>
+                {[1, 2, 3, 4, 5].map((n) => (
                   <option key={n} value={n}>{n === 5 ? "5 o più" : n}</option>
                 ))}
               </select>
             </Field>
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Fasce d&apos;età dei figli</legend>
-              {Object.entries(AGE_GROUPS).map(([k, v]) => (
-                <label key={k} className="flex items-center gap-2 text-sm font-normal">
-                  <input type="checkbox" name="ageGroups" value={k} defaultChecked={checked(d.childAgeGroups, k)} />
-                  {v}
-                </label>
-              ))}
-              <p className="text-xs text-ink-500">Indichiamo solo la fascia d&apos;età, mai nomi o dati dei bambini.</p>
-            </fieldset>
           </>
         )}
         {step === 2 && (
+          <>
+            <h1>Ti riconosci in qualcuna di queste situazioni?</h1>
+            <p className="text-sm text-ink-600">Puoi sceglierne più di una.</p>
+            {SITUATION_GROUPS.map((g) => (
+              <fieldset key={g} className="space-y-2">
+                <legend className="text-sm font-semibold text-ink-900">{g}</legend>
+                {SITUATIONS.filter((x) => x.group === g).map((x) => (
+                  <label key={x.id} className="flex items-center gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
+                    <input type="checkbox" name="situations" value={x.id} defaultChecked={checked(d.situations, x.id)} />
+                    {d.path === "bambino" && x.third ? x.third : x.text}
+                  </label>
+                ))}
+              </fieldset>
+            ))}
+            <label className="flex items-center gap-3 rounded-lg border border-ink-200 p-3 text-sm font-normal">
+              <input type="checkbox" name="situations" value="non_so" defaultChecked={!!d.situations && d.situations.length === 0 && step < intake.step} />
+              Non so ancora: vorrei solo capire da dove cominciare
+            </label>
+            <Field label="Cosa ti ha spinto a cercare supporto proprio ora? (facoltativo)" hint="Puoi saltare questa domanda. Non scrivere qui situazioni di emergenza: per quelle chiama il 112.">
+              <textarea name="notes" rows={3} maxLength={600} defaultValue={d.notes} />
+            </Field>
+          </>
+        )}
+        {step === 3 && (
           <>
             <h1>Le tue preferenze</h1>
             <Field label="Lingua">
@@ -94,7 +115,7 @@ export default async function Questionnaire({ searchParams }: { searchParams: Pr
             </fieldset>
           </>
         )}
-        {step === 3 && (
+        {step === 4 && (
           <>
             <h1>Esperienze precedenti</h1>
             <p className="text-sm text-ink-600">Hai già fatto un percorso con uno psicologo o un altro specialista?</p>
@@ -106,7 +127,7 @@ export default async function Questionnaire({ searchParams }: { searchParams: Pr
             ))}
           </>
         )}
-        {step === 4 && (
+        {step === 5 && (
           <>
             <h1>Un ultimo controllo</h1>
             <p className="text-sm text-ink-600">Due domande importanti per la tua sicurezza. Rispondi con sincerità: nessuna risposta ti penalizza.</p>

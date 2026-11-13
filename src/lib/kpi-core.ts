@@ -152,7 +152,7 @@ export function computeKpis(inp: KpiInput): { kpis: Kpi[]; sampleSize: number; r
 
   kpis.push(hide({ key: "K-12", label: "Cambio specialista", definition: "Quota di utenti che cambia specialista / colloqui svolti.", unit: "%" }, introDone.size ? (changed.size / introDone.size) * 100 : null, introDone.size));
 
-  kpis.push({ key: "K-14", label: "Indagine aziendale", definition: "Quota di dipendenti che percepisce l'azienda come di supporto a genitorialità e cura, con confronto tra due rilevazioni.", unit: "%", value: null, n: 0, suppressed: true, note: "Non ancora disponibile in questa versione (priorità «Importante», B-10)." });
+  kpis.push({ key: "K-14", label: "Indagine aziendale", definition: "Quota di dipendenti che risponde 4-5 a «Il mio responsabile è disponibile quando ho esigenze familiari» (indagine aziendale, domanda E5), con confronto tra due rilevazioni.", unit: "%", value: null, n: 0, suppressed: true, note: "Non ancora disponibile in questa versione (priorità «Importante», B-10)." });
 
   // K-15: ripartizione per genere di K-01, K-04, K-08, K-09 — sempre con soglia per cella
   const genders = ["f", "m", "x"];

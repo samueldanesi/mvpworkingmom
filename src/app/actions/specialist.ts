@@ -73,7 +73,16 @@ export async function submitProfileAction(fd: FormData) {
   if (!p) fail("/specialist/profile", "Profilo non trovato.");
   const price = Math.round((num(fd, "price") ?? 0) * 100);
   if (price < 1000 || price > 30000) fail("/specialist/profile", "La tariffa deve essere tra 10 € e 300 €.");
+  // Foto (U-07/S-03): solo immagini, fino a 2 MB; la nuova foto passa da approvazione come ogni altra modifica.
+  const photo = fd.get("photo");
+  let photoUrl: string | null | undefined;
+  if (photo instanceof File && photo.size > 0) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) fail("/specialist/profile", "La foto deve essere JPG, PNG o WebP.");
+    if (photo.size > 2 * 1024 * 1024) fail("/specialist/profile", "La foto supera i 2 MB.");
+    photoUrl = await saveEncrypted(Buffer.from(await photo.arrayBuffer()));
+  }
   const changes = {
+    ...(photoUrl ? { photoUrl } : {}),
     title: field(fd, "title"),
     bio: field(fd, "bio"),
     approach: field(fd, "approach"),

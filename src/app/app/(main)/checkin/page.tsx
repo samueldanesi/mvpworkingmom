@@ -22,7 +22,7 @@ export default async function Checkin({ searchParams }: { searchParams: Promise<
       ) : (
         <div className="space-y-4">
           <Card><p className="text-sm text-ink-600">{LABEL[moment]}</p></Card>
-          <CheckinForm moment={moment} next="/app/checkin" />
+          <CheckinForm moment={moment} next="/app/checkin" company={!!u.companyId} />
         </div>
       )}
     </>

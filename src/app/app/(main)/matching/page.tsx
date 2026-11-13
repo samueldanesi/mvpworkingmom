@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { SpecialistCard } from "@/components/SpecialistCard";
-import { Empty, PageHeader, Sp } from "@/components/ui";
+import { Empty, Notice, PageHeader, Sp } from "@/components/ui";
+import { SITUATIONS, situationSpecialties } from "@/lib/constants";
 import { careRelationships, companies, db } from "@/db";
 import { requireUser } from "@/lib/auth";
 import { rank, type Candidate } from "@/lib/matching";
@@ -33,6 +34,7 @@ export default async function Matching({ searchParams }: { searchParams: Promise
     }));
   const ranked = rank(cands, {
     area: intake.data.area ?? "altro",
+    wantedSpecialties: situationSpecialties(intake.data.situations ?? []),
     language: intake.data.language ?? "it",
     gender: intake.data.gender ?? "any",
     childAgeGroups: intake.data.childAgeGroups ?? [],
@@ -45,6 +47,7 @@ export default async function Matching({ searchParams }: { searchParams: Promise
     <>
       <PageHeader title="I tuoi specialisti" subtitle="Le proposte più adatte, in base alle tue risposte." />
       <Sp sp={sp} />
+      {SITUATIONS.filter((x) => x.note && intake.data.situations?.includes(x.id)).map((x) => <div key={x.id} className="mb-4"><Notice tone="blue">{x.note}</Notice></div>)}
       {top.length === 0 ? (
         <Empty>Al momento non ci sono specialisti disponibili. Riprova tra poco o scrivi all&apos;assistenza.</Empty>
       ) : (
